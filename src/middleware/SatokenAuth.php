@@ -1,0 +1,40 @@
+<?php
+
+namespace satoken\middleware;
+
+use Closure;
+use satoken\exception\NotLoginException;
+use satoken\exception\SatokenException;
+use satoken\exception\TokenInvalidException;
+use satoken\SaToken;
+
+class SatokenAuth
+{
+    public function handle($request, Closure $next)
+    {
+        try {
+            // 检查登录状态
+            SaToken::checkLogin();
+        } catch (NotLoginException|TokenInvalidException $e) {
+            return json([
+                'code' => $e->getErrorCode(),
+                'msg' => $e->getMessage(),
+                'data' => null,
+            ], 401, 401);
+        } catch (SatokenException $e) {
+            return json([
+                'code' => $e->getErrorCode(),
+                'msg' => $e->getMessage(),
+                'data' => null,
+            ], 'json', 400);
+        } catch (\Exception $e) {
+            return json([
+                'code' => 500,
+                'msg' => '服务器内部错误',
+                'data' => null,
+            ], 500, 500);
+        }
+
+        return $next($request);
+    }
+}

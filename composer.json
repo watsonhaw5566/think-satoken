@@ -1,0 +1,45 @@
+{
+  "name": "watsonhaw/think-satoken",
+  "description": "thinkphp sa-token 扩展",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "watsonhaw",
+      "email": "348748267@qq.com"
+    }
+  ],
+  "autoload": {
+    "psr-4": {
+      "satoken\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "satoken\\tests\\": "tests/"
+    },
+    "files": [
+      "tests/helpers.php"
+    ]
+  },
+  "require": {
+    "php": ">=8.0",
+    "ramsey/uuid": "^4.7"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^12.2",
+    "mockery/mockery": "^1.6",
+    "topthink/framework": "^8.0",
+    "laravel/pint": "^1.25"
+  },
+  "scripts": {
+    "fix-style": "vendor/bin/pint",
+    "test": "vendor/bin/phpunit"
+  },
+  "extra": {
+    "think": {
+      "config": {
+        "satoken": "src/config/satoken.php"
+      }
+    }
+  }
+}
