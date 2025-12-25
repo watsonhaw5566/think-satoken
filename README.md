@@ -2,7 +2,7 @@
 
 ## 项目介绍
 
-think-satoken 是一个基于 PHP 实现的 SaToken 权限认证框架，专为 ThinkPHP 框架设计。实现了 Java SaToken
+think-satoken 是一个基于 PHP 实现的 SaToken 权限认证框架，专为 ThinkPHP(6|8) 框架设计。实现了 Java SaToken
 的核心功能，提供简洁易用的权限认证解决方案。
 
 ## 功能特性
@@ -109,7 +109,8 @@ curl -H "Authorization: Bearer $TOKEN" https://api.example.com/user/profile
 curl -H "satoken: $TOKEN" https://api.example.com/user/profile
 ```
 
-注意：不建议通过查询参数或请求体传递令牌，以避免在日志、Referer 等渠道泄露。SaToken 会优先从 `Authorization: Bearer` 中提取令牌，其次从自定义头 `satoken` 读取。
+注意：不建议通过查询参数或请求体传递令牌，以避免在日志、Referer 等渠道泄露。SaToken 会优先从 `Authorization: Bearer`
+中提取令牌，其次从自定义头 `satoken` 读取。
 
 ## 异常处理
 
