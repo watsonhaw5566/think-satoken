@@ -4,15 +4,15 @@
     "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
     "This file is @generated automatically"
   ],
-  "content-hash": "5962f6b04da43ea144d315f467ad57a1",
+  "content-hash": "5a1a8385e357335f88e6acb57fd6d065",
   "packages": [
     {
       "name": "brick/math",
-      "version": "0.14.0",
+      "version": "0.14.1",
       "dist": {
         "type": "zip",
-        "url": "https://mirrors.tencent.com/repository/composer/brick/math/0.14.0/brick-math-0.14.0.zip",
-        "reference": "113a8ee2656b882d4c3164fa31aa6e12cbb7aaa2",
+        "url": "https://mirrors.tencent.com/repository/composer/brick/math/0.14.1/brick-math-0.14.1.zip",
+        "reference": "f05858549e5f9d7bb45875a75583240a38a281d0",
         "shasum": ""
       },
       "require": {
@@ -50,9 +50,9 @@
       ],
       "support": {
         "issues": "https://github.com/brick/math/issues",
-        "source": "https://github.com/brick/math/tree/0.14.0"
+        "source": "https://github.com/brick/math/tree/0.14.1"
       },
-      "time": "2025-08-29T12:40:03+00:00"
+      "time": "2025-11-24T14:40:29+00:00"
     },
     {
       "name": "ramsey/collection",
@@ -126,15 +126,15 @@
     },
     {
       "name": "ramsey/uuid",
-      "version": "4.9.1",
+      "version": "4.9.2",
       "dist": {
         "type": "zip",
-        "url": "https://mirrors.tencent.com/repository/composer/ramsey/uuid/4.9.1/ramsey-uuid-4.9.1.zip",
-        "reference": "81f941f6f729b1e3ceea61d9d014f8b6c6800440",
+        "url": "https://mirrors.tencent.com/repository/composer/ramsey/uuid/4.9.2/ramsey-uuid-4.9.2.zip",
+        "reference": "8429c78ca35a09f27565311b98101e2826affde0",
         "shasum": ""
       },
       "require": {
-        "brick/math": "^0.8.8 || ^0.9 || ^0.10 || ^0.11 || ^0.12 || ^0.13 || ^0.14",
+        "brick/math": "^0.8.16 || ^0.9 || ^0.10 || ^0.11 || ^0.12 || ^0.13 || ^0.14",
         "php": "^8.0",
         "ramsey/collection": "^1.2 || ^2.0"
       },
@@ -192,64 +192,19 @@
       ],
       "support": {
         "issues": "https://github.com/ramsey/uuid/issues",
-        "source": "https://github.com/ramsey/uuid/tree/4.9.1"
+        "source": "https://github.com/ramsey/uuid/tree/4.9.2"
       },
-      "time": "2025-09-04T20:59:21+00:00"
+      "time": "2025-12-14T04:43:48+00:00"
     }
   ],
   "packages-dev": [
     {
-      "name": "hamcrest/hamcrest-php",
-      "version": "v2.1.1",
-      "dist": {
-        "type": "zip",
-        "url": "https://mirrors.tencent.com/repository/composer/hamcrest/hamcrest-php/v2.1.1/hamcrest-hamcrest-php-v2.1.1.zip",
-        "reference": "f8b1c0173b22fa6ec77a81fe63e5b01eba7e6487",
-        "shasum": ""
-      },
-      "require": {
-        "php": "^7.4|^8.0"
-      },
-      "replace": {
-        "cordoval/hamcrest-php": "*",
-        "davedevelopment/hamcrest-php": "*",
-        "kodova/hamcrest-php": "*"
-      },
-      "require-dev": {
-        "phpunit/php-file-iterator": "^1.4 || ^2.0 || ^3.0",
-        "phpunit/phpunit": "^4.8.36 || ^5.7 || ^6.5 || ^7.0 || ^8.0 || ^9.0"
-      },
-      "type": "library",
-      "extra": {
-        "branch-alias": {
-          "dev-master": "2.1-dev"
-        }
-      },
-      "autoload": {
-        "classmap": [
-          "hamcrest"
-        ]
-      },
-      "license": [
-        "BSD-3-Clause"
-      ],
-      "description": "This is the PHP port of Hamcrest Matchers",
-      "keywords": [
-        "test"
-      ],
-      "support": {
-        "issues": "https://github.com/hamcrest/hamcrest-php/issues",
-        "source": "https://github.com/hamcrest/hamcrest-php/tree/v2.1.1"
-      },
-      "time": "2025-04-30T06:54:44+00:00"
-    },
-    {
       "name": "laravel/pint",
-      "version": "v1.25.1",
+      "version": "v1.26.0",
       "dist": {
         "type": "zip",
-        "url": "https://mirrors.tencent.com/repository/composer/laravel/pint/v1.25.1/laravel-pint-v1.25.1.zip",
-        "reference": "5016e263f95d97670d71b9a987bd8996ade6d8d9",
+        "url": "https://mirrors.tencent.com/repository/composer/laravel/pint/v1.26.0/laravel-pint-v1.26.0.zip",
+        "reference": "69dcca060ecb15e4b564af63d1f642c81a241d6f",
         "shasum": ""
       },
       "require": {
@@ -260,13 +215,13 @@
         "php": "^8.2.0"
       },
       "require-dev": {
-        "friendsofphp/php-cs-fixer": "^3.87.2",
-        "illuminate/view": "^11.46.0",
-        "larastan/larastan": "^3.7.1",
-        "laravel-zero/framework": "^11.45.0",
+        "friendsofphp/php-cs-fixer": "^3.90.0",
+        "illuminate/view": "^12.40.1",
+        "larastan/larastan": "^3.8.0",
+        "laravel-zero/framework": "^12.0.4",
         "mockery/mockery": "^1.6.12",
-        "nunomaduro/termwind": "^2.3.1",
-        "pestphp/pest": "^2.36.0"
+        "nunomaduro/termwind": "^2.3.3",
+        "pestphp/pest": "^3.8.4"
       },
       "bin": [
         "builds/pint"
@@ -291,6 +246,7 @@
       "description": "An opinionated code formatter for PHP.",
       "homepage": "https://laravel.com",
       "keywords": [
+        "dev",
         "format",
         "formatter",
         "lint",
@@ -301,84 +257,7 @@
         "issues": "https://github.com/laravel/pint/issues",
         "source": "https://github.com/laravel/pint"
       },
-      "time": "2025-09-19T02:57:12+00:00"
-    },
-    {
-      "name": "mockery/mockery",
-      "version": "1.6.12",
-      "dist": {
-        "type": "zip",
-        "url": "https://mirrors.tencent.com/repository/composer/mockery/mockery/1.6.12/mockery-mockery-1.6.12.zip",
-        "reference": "1f4efdd7d3beafe9807b08156dfcb176d18f1699",
-        "shasum": ""
-      },
-      "require": {
-        "hamcrest/hamcrest-php": "^2.0.1",
-        "lib-pcre": ">=7.0",
-        "php": ">=7.3"
-      },
-      "conflict": {
-        "phpunit/phpunit": "<8.0"
-      },
-      "require-dev": {
-        "phpunit/phpunit": "^8.5 || ^9.6.17",
-        "symplify/easy-coding-standard": "^12.1.14"
-      },
-      "type": "library",
-      "autoload": {
-        "files": [
-          "library/helpers.php",
-          "library/Mockery.php"
-        ],
-        "psr-4": {
-          "Mockery\\": "library/Mockery"
-        }
-      },
-      "license": [
-        "BSD-3-Clause"
-      ],
-      "authors": [
-        {
-          "name": "Pádraic Brady",
-          "email": "padraic.brady@gmail.com",
-          "homepage": "https://github.com/padraic",
-          "role": "Author"
-        },
-        {
-          "name": "Dave Marshall",
-          "email": "dave.marshall@atstsolutions.co.uk",
-          "homepage": "https://davedevelopment.co.uk",
-          "role": "Developer"
-        },
-        {
-          "name": "Nathanael Esayeas",
-          "email": "nathanael.esayeas@protonmail.com",
-          "homepage": "https://github.com/ghostwriter",
-          "role": "Lead Developer"
-        }
-      ],
-      "description": "Mockery is a simple yet flexible PHP mock object framework",
-      "homepage": "https://github.com/mockery/mockery",
-      "keywords": [
-        "BDD",
-        "TDD",
-        "library",
-        "mock",
-        "mock objects",
-        "mockery",
-        "stub",
-        "test",
-        "test double",
-        "testing"
-      ],
-      "support": {
-        "docs": "https://docs.mockery.io/",
-        "issues": "https://github.com/mockery/mockery/issues",
-        "rss": "https://github.com/mockery/mockery/releases.atom",
-        "security": "https://github.com/mockery/mockery/security/advisories",
-        "source": "https://github.com/mockery/mockery"
-      },
-      "time": "2024-05-16T03:13:13+00:00"
+      "time": "2025-11-25T21:15:52+00:00"
     },
     {
       "name": "myclabs/deep-copy",
@@ -430,11 +309,11 @@
     },
     {
       "name": "nikic/php-parser",
-      "version": "v5.6.2",
+      "version": "v5.7.0",
       "dist": {
         "type": "zip",
-        "url": "https://mirrors.tencent.com/repository/composer/nikic/php-parser/v5.6.2/nikic-php-parser-v5.6.2.zip",
-        "reference": "3a454ca033b9e06b63282ce19562e892747449bb",
+        "url": "https://mirrors.tencent.com/repository/composer/nikic/php-parser/v5.7.0/nikic-php-parser-v5.7.0.zip",
+        "reference": "dca41cd15c2ac9d055ad70dbfd011130757d1f82",
         "shasum": ""
       },
       "require": {
@@ -476,9 +355,9 @@
       ],
       "support": {
         "issues": "https://github.com/nikic/PHP-Parser/issues",
-        "source": "https://github.com/nikic/PHP-Parser/tree/v5.6.2"
+        "source": "https://github.com/nikic/PHP-Parser/tree/v5.7.0"
       },
-      "time": "2025-10-21T19:32:17+00:00"
+      "time": "2025-12-06T11:56:16+00:00"
     },
     {
       "name": "phar-io/manifest",
@@ -582,18 +461,18 @@
     },
     {
       "name": "phpunit/php-code-coverage",
-      "version": "12.4.0",
+      "version": "12.5.2",
       "dist": {
         "type": "zip",
-        "url": "https://mirrors.tencent.com/repository/composer/phpunit/php-code-coverage/12.4.0/phpunit-php-code-coverage-12.4.0.zip",
-        "reference": "67e8aed88f93d0e6e1cb7effe1a2dfc2fee6022c",
+        "url": "https://mirrors.tencent.com/repository/composer/phpunit/php-code-coverage/12.5.2/phpunit-php-code-coverage-12.5.2.zip",
+        "reference": "4a9739b51cbcb355f6e95659612f92e282a7077b",
         "shasum": ""
       },
       "require": {
         "ext-dom": "*",
         "ext-libxml": "*",
         "ext-xmlwriter": "*",
-        "nikic/php-parser": "^5.6.1",
+        "nikic/php-parser": "^5.7.0",
         "php": ">=8.3",
         "phpunit/php-file-iterator": "^6.0",
         "phpunit/php-text-template": "^5.0",
@@ -601,10 +480,10 @@
         "sebastian/environment": "^8.0.3",
         "sebastian/lines-of-code": "^4.0",
         "sebastian/version": "^6.0",
-        "theseer/tokenizer": "^1.2.3"
+        "theseer/tokenizer": "^2.0.1"
       },
       "require-dev": {
-        "phpunit/phpunit": "^12.3.7"
+        "phpunit/phpunit": "^12.5.1"
       },
       "suggest": {
         "ext-pcov": "PHP extension that provides line coverage",
@@ -613,7 +492,7 @@
       "type": "library",
       "extra": {
         "branch-alias": {
-          "dev-main": "12.4.x-dev"
+          "dev-main": "12.5.x-dev"
         }
       },
       "autoload": {
@@ -641,9 +520,9 @@
       "support": {
         "issues": "https://github.com/sebastianbergmann/php-code-coverage/issues",
         "security": "https://github.com/sebastianbergmann/php-code-coverage/security/policy",
-        "source": "https://github.com/sebastianbergmann/php-code-coverage/tree/12.4.0"
+        "source": "https://github.com/sebastianbergmann/php-code-coverage/tree/12.5.2"
       },
-      "time": "2025-09-24T13:44:41+00:00"
+      "time": "2025-12-24T07:03:04+00:00"
     },
     {
       "name": "phpunit/php-file-iterator",
@@ -844,11 +723,11 @@
     },
     {
       "name": "phpunit/phpunit",
-      "version": "12.4.3",
+      "version": "12.5.4",
       "dist": {
         "type": "zip",
-        "url": "https://mirrors.tencent.com/repository/composer/phpunit/phpunit/12.4.3/phpunit-phpunit-12.4.3.zip",
-        "reference": "d8f644d8d9bb904867f7a0aeb1bd306e0d966949",
+        "url": "https://mirrors.tencent.com/repository/composer/phpunit/phpunit/12.5.4/phpunit-phpunit-12.5.4.zip",
+        "reference": "4ba0e923f9d3fc655de22f9547c01d15a41fc93a",
         "shasum": ""
       },
       "require": {
@@ -862,7 +741,7 @@
         "phar-io/manifest": "^2.0.4",
         "phar-io/version": "^3.2.1",
         "php": ">=8.3",
-        "phpunit/php-code-coverage": "^12.4.0",
+        "phpunit/php-code-coverage": "^12.5.1",
         "phpunit/php-file-iterator": "^6.0.0",
         "phpunit/php-invoker": "^6.0.0",
         "phpunit/php-text-template": "^5.0.0",
@@ -884,7 +763,7 @@
       "type": "library",
       "extra": {
         "branch-alias": {
-          "dev-main": "12.4-dev"
+          "dev-main": "12.5-dev"
         }
       },
       "autoload": {
@@ -915,28 +794,23 @@
       "support": {
         "issues": "https://github.com/sebastianbergmann/phpunit/issues",
         "security": "https://github.com/sebastianbergmann/phpunit/security/policy",
-        "source": "https://github.com/sebastianbergmann/phpunit/tree/12.4.3"
+        "source": "https://github.com/sebastianbergmann/phpunit/tree/12.5.4"
       },
-      "time": "2025-11-13T07:20:26+00:00"
+      "time": "2025-12-15T06:05:34+00:00"
     },
     {
       "name": "psr/container",
-      "version": "2.0.2",
+      "version": "1.1.2",
       "dist": {
         "type": "zip",
-        "url": "https://mirrors.tencent.com/repository/composer/psr/container/2.0.2/psr-container-2.0.2.zip",
-        "reference": "c71ecc56dfe541dbd90c5360474fbc405f8d5963",
+        "url": "https://mirrors.tencent.com/repository/composer/psr/container/1.1.2/psr-container-1.1.2.zip",
+        "reference": "513e0666f7216c7459170d56df27dfcefe1689ea",
         "shasum": ""
       },
       "require": {
         "php": ">=7.4.0"
       },
       "type": "library",
-      "extra": {
-        "branch-alias": {
-          "dev-master": "2.0.x-dev"
-        }
-      },
       "autoload": {
         "psr-4": {
           "Psr\\Container\\": "src/"
@@ -962,9 +836,9 @@
       ],
       "support": {
         "issues": "https://github.com/php-fig/container/issues",
-        "source": "https://github.com/php-fig/container/tree/2.0.2"
+        "source": "https://github.com/php-fig/container/tree/1.1.2"
       },
-      "time": "2021-11-05T16:47:00+00:00"
+      "time": "2021-11-05T16:50:12+00:00"
     },
     {
       "name": "psr/http-message",
@@ -1015,25 +889,25 @@
     },
     {
       "name": "psr/log",
-      "version": "3.0.2",
+      "version": "1.1.4",
       "dist": {
         "type": "zip",
-        "url": "https://mirrors.tencent.com/repository/composer/psr/log/3.0.2/psr-log-3.0.2.zip",
-        "reference": "f16e1d5863e37f8d8c2a01719f5b34baa2b714d3",
+        "url": "https://mirrors.tencent.com/repository/composer/psr/log/1.1.4/psr-log-1.1.4.zip",
+        "reference": "d49695b909c3b7628b6289db5479a1c204601f11",
         "shasum": ""
       },
       "require": {
-        "php": ">=8.0.0"
+        "php": ">=5.3.0"
       },
       "type": "library",
       "extra": {
         "branch-alias": {
-          "dev-master": "3.x-dev"
+          "dev-master": "1.1.x-dev"
         }
       },
       "autoload": {
         "psr-4": {
-          "Psr\\Log\\": "src"
+          "Psr\\Log\\": "Psr/Log/"
         }
       },
       "license": [
@@ -1053,26 +927,26 @@
         "psr-3"
       ],
       "support": {
-        "source": "https://github.com/php-fig/log/tree/3.0.2"
+        "source": "https://github.com/php-fig/log/tree/1.1.4"
       },
-      "time": "2024-09-11T13:17:53+00:00"
+      "time": "2021-05-03T11:20:27+00:00"
     },
     {
       "name": "psr/simple-cache",
-      "version": "3.0.0",
+      "version": "1.0.1",
       "dist": {
         "type": "zip",
-        "url": "https://mirrors.tencent.com/repository/composer/psr/simple-cache/3.0.0/psr-simple-cache-3.0.0.zip",
-        "reference": "764e0b3939f5ca87cb904f570ef9be2d78a07865",
+        "url": "https://mirrors.tencent.com/repository/composer/psr/simple-cache/1.0.1/psr-simple-cache-1.0.1.zip",
+        "reference": "408d5eafb83c57f6365a3ca330ff23aa4a5fa39b",
         "shasum": ""
       },
       "require": {
-        "php": ">=8.0.0"
+        "php": ">=5.3.0"
       },
       "type": "library",
       "extra": {
         "branch-alias": {
-          "dev-master": "3.0.x-dev"
+          "dev-master": "1.0.x-dev"
         }
       },
       "autoload": {
@@ -1086,7 +960,7 @@
       "authors": [
         {
           "name": "PHP-FIG",
-          "homepage": "https://www.php-fig.org/"
+          "homepage": "http://www.php-fig.org/"
         }
       ],
       "description": "Common interfaces for simple caching",
@@ -1098,9 +972,9 @@
         "simple-cache"
       ],
       "support": {
-        "source": "https://github.com/php-fig/simple-cache/tree/3.0.0"
+        "source": "https://github.com/php-fig/simple-cache/tree/master"
       },
-      "time": "2021-10-29T13:26:27+00:00"
+      "time": "2017-10-23T01:57:42+00:00"
     },
     {
       "name": "sebastian/cli-parser",
@@ -1801,18 +1675,18 @@
     },
     {
       "name": "theseer/tokenizer",
-      "version": "1.3.0",
+      "version": "2.0.1",
       "dist": {
         "type": "zip",
-        "url": "https://mirrors.tencent.com/repository/composer/theseer/tokenizer/1.3.0/theseer-tokenizer-1.3.0.zip",
-        "reference": "d74205c497bfbca49f34d4bc4c19c17e22db4ebb",
+        "url": "https://mirrors.tencent.com/repository/composer/theseer/tokenizer/2.0.1/theseer-tokenizer-2.0.1.zip",
+        "reference": "7989e43bf381af0eac72e4f0ca5bcbfa81658be4",
         "shasum": ""
       },
       "require": {
         "ext-dom": "*",
         "ext-tokenizer": "*",
         "ext-xmlwriter": "*",
-        "php": "^7.2 || ^8.0"
+        "php": "^8.1"
       },
       "type": "library",
       "autoload": {
@@ -1833,37 +1707,35 @@
       "description": "A small library for converting tokenized PHP source code into XML and potentially other formats",
       "support": {
         "issues": "https://github.com/theseer/tokenizer/issues",
-        "source": "https://github.com/theseer/tokenizer/tree/1.3.0"
+        "source": "https://github.com/theseer/tokenizer/tree/2.0.1"
       },
-      "time": "2025-11-13T13:44:09+00:00"
+      "time": "2025-12-08T11:19:18+00:00"
     },
     {
       "name": "topthink/framework",
-      "version": "v8.1.3",
+      "version": "v6.1.5",
       "dist": {
         "type": "zip",
-        "url": "https://mirrors.tencent.com/repository/composer/topthink/framework/v8.1.3/topthink-framework-v8.1.3.zip",
-        "reference": "e4207e98b66f92d26097ed6efd535930cba90e8f",
+        "url": "https://mirrors.tencent.com/repository/composer/topthink/framework/v6.1.5/topthink-framework-v6.1.5.zip",
+        "reference": "57d1950a1844ef8d3098ea290032aeb92e2e32c3",
         "shasum": ""
       },
       "require": {
-        "ext-ctype": "*",
         "ext-json": "*",
         "ext-mbstring": "*",
-        "php": ">=8.0.0",
+        "php": ">=7.2.5",
+        "psr/container": "~1.0",
         "psr/http-message": "^1.0",
-        "psr/log": "^1.0|^2.0|^3.0",
-        "psr/simple-cache": "^1.0|^2.0|^3.0",
-        "topthink/think-container": "^3.0",
-        "topthink/think-helper": "^3.1",
-        "topthink/think-orm": "^3.0|^4.0",
-        "topthink/think-validate": "^3.0"
+        "psr/log": "~1.0",
+        "psr/simple-cache": "^1.0",
+        "topthink/think-helper": "^3.1.1",
+        "topthink/think-orm": "^2.0|^3.0"
       },
       "require-dev": {
         "guzzlehttp/psr7": "^2.1.0",
         "mikey179/vfsstream": "^1.6",
         "mockery/mockery": "^1.2",
-        "phpunit/phpunit": "^9.5"
+        "phpunit/phpunit": "^7.0"
       },
       "type": "library",
       "autoload": {
@@ -1894,49 +1766,9 @@
       ],
       "support": {
         "issues": "https://github.com/top-think/framework/issues",
-        "source": "https://github.com/top-think/framework/tree/v8.1.3"
+        "source": "https://github.com/top-think/framework/tree/v6.1.5"
       },
-      "time": "2025-07-14T03:48:44+00:00"
-    },
-    {
-      "name": "topthink/think-container",
-      "version": "v3.0.2",
-      "dist": {
-        "type": "zip",
-        "url": "https://mirrors.tencent.com/repository/composer/topthink/think-container/v3.0.2/topthink-think-container-v3.0.2.zip",
-        "reference": "b2df244be1e7399ad4c8be1ccc40ed57868f730a",
-        "shasum": ""
-      },
-      "require": {
-        "php": ">=8.0",
-        "psr/container": "^2.0",
-        "topthink/think-helper": "^3.1"
-      },
-      "require-dev": {
-        "phpunit/phpunit": "^9.5"
-      },
-      "type": "library",
-      "autoload": {
-        "files": [],
-        "psr-4": {
-          "think\\": "src"
-        }
-      },
-      "license": [
-        "Apache-2.0"
-      ],
-      "authors": [
-        {
-          "name": "liu21st",
-          "email": "liu21st@gmail.com"
-        }
-      ],
-      "description": "PHP Container & Facade Manager",
-      "support": {
-        "issues": "https://github.com/top-think/think-container/issues",
-        "source": "https://github.com/top-think/think-container/tree/v3.0.2"
-      },
-      "time": "2025-04-07T03:21:51+00:00"
+      "time": "2024-04-16T02:01:19+00:00"
     },
     {
       "name": "topthink/think-helper",
@@ -1980,11 +1812,11 @@
     },
     {
       "name": "topthink/think-orm",
-      "version": "v4.0.50",
+      "version": "v3.0.34",
       "dist": {
         "type": "zip",
-        "url": "https://mirrors.tencent.com/repository/composer/topthink/think-orm/v4.0.50/topthink-think-orm-v4.0.50.zip",
-        "reference": "ddae72d5ff4d953d3d8cc526fd9c50e8862ce2cc",
+        "url": "https://mirrors.tencent.com/repository/composer/topthink/think-orm/v3.0.34/topthink-think-orm-v3.0.34.zip",
+        "reference": "715e55da149fe32a12d68ef10e5b00e70bd3dbec",
         "shasum": ""
       },
       "require": {
@@ -1992,9 +1824,8 @@
         "ext-pdo": "*",
         "php": ">=8.0.0",
         "psr/log": ">=1.0",
-        "psr/simple-cache": "^3.0",
-        "topthink/think-helper": "^3.1",
-        "topthink/think-validate": "^3.0"
+        "psr/simple-cache": ">=1.0",
+        "topthink/think-helper": "^3.1"
       },
       "require-dev": {
         "phpunit/phpunit": "^9.6|^10"
@@ -2005,7 +1836,6 @@
       "type": "library",
       "autoload": {
         "files": [
-          "src/helper.php",
           "stubs/load_stubs.php"
         ],
         "psr-4": {
@@ -2028,47 +1858,9 @@
       ],
       "support": {
         "issues": "https://github.com/top-think/think-orm/issues",
-        "source": "https://github.com/top-think/think-orm/tree/v4.0.50"
+        "source": "https://github.com/top-think/think-orm/tree/v3.0.34"
       },
-      "time": "2025-08-26T05:32:22+00:00"
-    },
-    {
-      "name": "topthink/think-validate",
-      "version": "v3.0.7",
-      "dist": {
-        "type": "zip",
-        "url": "https://mirrors.tencent.com/repository/composer/topthink/think-validate/v3.0.7/topthink-think-validate-v3.0.7.zip",
-        "reference": "85063f6d4ef8ed122f17a36179dc3e0949b30988",
-        "shasum": ""
-      },
-      "require": {
-        "php": ">=8.0",
-        "topthink/think-container": ">=3.0"
-      },
-      "type": "library",
-      "autoload": {
-        "files": [
-          "src/helper.php"
-        ],
-        "psr-4": {
-          "think\\": "src"
-        }
-      },
-      "license": [
-        "Apache-2.0"
-      ],
-      "authors": [
-        {
-          "name": "liu21st",
-          "email": "liu21st@gmail.com"
-        }
-      ],
-      "description": "think validate",
-      "support": {
-        "issues": "https://github.com/top-think/think-validate/issues",
-        "source": "https://github.com/top-think/think-validate/tree/v3.0.7"
-      },
-      "time": "2025-06-11T05:51:40+00:00"
+      "time": "2025-01-14T06:03:33+00:00"
     }
   ],
   "aliases": [],
@@ -2077,7 +1869,7 @@
   "prefer-stable": false,
   "prefer-lowest": false,
   "platform": {
-    "php": ">=8.0"
+    "php": "^7.1||^8.0"
   },
   "platform-dev": {},
   "plugin-api-version": "2.6.0"
