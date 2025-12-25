@@ -165,7 +165,7 @@ class SaToken implements SatokenInterface
     {
         $config = self::getConfig();
 
-        if (empty($config['token_name'])) {
+        if (!empty($config['token_name'])) {
             return Request::header($config['token_name']);
         }
         return preg_match('/^Bearer\s+(\S+)$/i', Request::header('Authorization'), $m) ? $m[1] : null;
