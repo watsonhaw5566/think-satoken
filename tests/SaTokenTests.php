@@ -1,9 +1,10 @@
 <?php
 
+namespace satoken\tests;
+
 use satoken\exception\NotLoginException;
 use satoken\exception\TokenInvalidException;
 use satoken\SaToken;
-use satoken\tests\ThinkTestCase;
 use think\facade\Cache;
 
 /**
@@ -119,7 +120,7 @@ class SaTokenTests extends ThinkTestCase
     public function test_validate_token_format_rejects_uuid_with_signature()
     {
         $uuid = SaToken::createToken();
-        $signed = $uuid.'.deadbeef';
+        $signed = $uuid . '.deadbeef';
         $this->assertTrue(SaToken::validateTokenFormat($uuid));
         $this->assertFalse(SaToken::validateTokenFormat($signed));
     }
@@ -170,7 +171,7 @@ class SaTokenTests extends ThinkTestCase
         $this->assertEquals(self::TEST_USER_ID, $tokenInfo['loginId']);
 
         // 验证loginId与token的映射关系已建立
-        $loginIdKey = 'satoken:loginId:'.self::TEST_USER_ID;
+        $loginIdKey = 'satoken:loginId:' . self::TEST_USER_ID;
         $storedToken = Cache::get($loginIdKey);
         $this->assertNotEmpty($storedToken);
     }
@@ -472,7 +473,7 @@ class SaTokenTests extends ThinkTestCase
         $this->assertTrue(SaToken::isLogin($t2));
         $this->assertFalse(SaToken::isLogin($t1));
 
-        $loginIdKey = 'satoken:loginId:'.self::TEST_USER_ID;
+        $loginIdKey = 'satoken:loginId:' . self::TEST_USER_ID;
         $this->assertSame($t2, Cache::get($loginIdKey));
 
         reset_satoken_test_config();
@@ -488,7 +489,7 @@ class SaTokenTests extends ThinkTestCase
         $loginId = self::TEST_USER_ID;
         $t1 = SaToken::createToken();
         $t2 = SaToken::createToken();
-        $loginIdKey = 'satoken:loginId:'.$loginId;
+        $loginIdKey = 'satoken:loginId:' . $loginId;
 
         Cache::set("satoken:token:$t1", ['loginId' => $loginId], 60);
         Cache::set("satoken:token:$t2", ['loginId' => $loginId], 60);
@@ -511,7 +512,7 @@ class SaTokenTests extends ThinkTestCase
         set_satoken_test_config(['is_concurrent' => false, 'timeout' => 60]);
 
         $t = SaToken::login(self::TEST_USER_ID);
-        $loginIdKey = 'satoken:loginId:'.self::TEST_USER_ID;
+        $loginIdKey = 'satoken:loginId:' . self::TEST_USER_ID;
         Cache::delete($loginIdKey);
 
         $this->assertTrue(SaToken::isLogin($t));
@@ -535,7 +536,7 @@ class SaTokenTests extends ThinkTestCase
         $this->assertTrue(SaToken::isLogin($t2));
         $this->assertTrue(SaToken::isLogin($t3));
 
-        $loginIdKey = 'satoken:loginId:'.self::TEST_USER_ID;
+        $loginIdKey = 'satoken:loginId:' . self::TEST_USER_ID;
         $list = Cache::get($loginIdKey);
         $this->assertIsArray($list);
         $this->assertCount(2, $list);
