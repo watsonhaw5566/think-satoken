@@ -31,8 +31,8 @@ think-satoken 提供了丰富的配置选项，配置文件位于 `src/config/sa
 
 ```php
 return [
-    // Token 名称
-    'token_name' => 'satoken',
+    // 自定义 Token header 名称
+    'token_name' => '',
     // Token 有效期，单位秒(默认1天)
     'timeout' => 86400,
     // 是否允许同一账号多地登录
@@ -97,7 +97,7 @@ Route::get('api/user/profile', 'UserController@profile')->middleware('auth');
 推荐通过请求头传递令牌：
 
 - `Authorization: Bearer <token>`（推荐）
-- 或自定义头：`satoken: <token>`
+- 或自定义头：`{token_name}: <token>`
 
 示例：
 
@@ -106,11 +106,11 @@ Route::get('api/user/profile', 'UserController@profile')->middleware('auth');
 curl -H "Authorization: Bearer $TOKEN" https://api.example.com/user/profile
 
 # 备选：使用自定义头 satoken 传递令牌
-curl -H "satoken: $TOKEN" https://api.example.com/user/profile
+curl -H "{token_name}: $TOKEN" https://api.example.com/user/profile
 ```
 
 注意：不建议通过查询参数或请求体传递令牌，以避免在日志、Referer 等渠道泄露。SaToken 会优先从 `Authorization: Bearer`
-中提取令牌，其次从自定义头 `satoken` 读取。
+中提取令牌，其次从自定义头 `{token_name}` 读取。
 
 ## 异常处理
 
