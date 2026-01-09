@@ -163,12 +163,23 @@ class SaToken implements SatokenInterface
 
     private static function getToken(): ?string
     {
-        $config = self::getConfig();
+        try {
+            $config = self::getConfig();
 
-        if (!empty($config['token_name'])) {
-            return Request::header($config['token_name']);
+            if (!empty($config['token_name'])) {
+                return Request::header($config['token_name']);
+            }
+
+            $authorization = Request::header('Authorization');
+            if (!empty($authorization) && preg_match('/^Bearer\s+(\S+)$/i', $authorization, $m)) {
+                return $m[1];
+            }
+
+            return null;
+        } catch (\Exception $e) {
+            // 如果获取请求头时发生异常，返回null表示未提供token
+            return null;
         }
-        return preg_match('/^Bearer\s+(\S+)$/i', Request::header('Authorization'), $m) ? $m[1] : null;
     }
 
     public static function validateTokenFormat(string $token): bool
