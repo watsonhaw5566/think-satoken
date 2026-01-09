@@ -20,19 +20,19 @@ class SatokenAuth
                 'code' => $e->getErrorCode(),
                 'msg' => $e->getMessage(),
                 'data' => null,
-            ], 401, 401);
+            ], 401);
         } catch (SatokenException $e) {
             return json([
                 'code' => $e->getErrorCode(),
                 'msg' => $e->getMessage(),
                 'data' => null,
-            ], 'json', 400);
+            ], 400);
         } catch (\Exception $e) {
             return json([
                 'code' => 500,
                 'msg' => '服务器内部错误',
                 'data' => null,
-            ], 500, 500);
+            ], 500);
         }
 
         return $next($request);
