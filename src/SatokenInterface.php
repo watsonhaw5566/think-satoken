@@ -80,5 +80,4 @@ interface SatokenInterface
     public static function getExtra(?string $token = null): array;
 
     public static function setExtra(?string $token = null, array $extra = []): bool;
-
 }
