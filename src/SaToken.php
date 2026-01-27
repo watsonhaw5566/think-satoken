@@ -15,7 +15,7 @@ use think\facade\Request;
 class SaToken implements SatokenInterface
 {
     // 默认配置存储
-    protected static array $config = [
+    protected static $config = [
         'token_name' => '', // 自定义 Token name 名称
         'timeout' => 86400, // Token 有效期，单位秒
         'is_concurrent' => true, // 是否允许同一账号多地登录
@@ -163,23 +163,16 @@ class SaToken implements SatokenInterface
 
     private static function getToken(): ?string
     {
-        try {
-            $config = self::getConfig();
-
-            if (!empty($config['token_name'])) {
-                return Request::header($config['token_name']);
-            }
-
-            $authorization = Request::header('Authorization');
-            if (!empty($authorization) && preg_match('/^Bearer\s+(\S+)$/i', $authorization, $m)) {
-                return $m[1];
-            }
-
-            return null;
-        } catch (\Exception $e) {
-            // 如果获取请求头时发生异常，返回null表示未提供token
-            return null;
+        $config = self::getConfig();
+        if (! empty($config['token_name'])) {
+            return Request::header($config['token_name']);
         }
+        $authorization = Request::header('Authorization');
+        if ($authorization) {
+            return preg_match('/^Bearer\s+(\S+)$/i', $authorization, $m) ? $m[1] : null;
+        }
+
+        return null;
     }
 
     public static function validateTokenFormat(string $token): bool
