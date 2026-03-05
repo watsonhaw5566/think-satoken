@@ -322,8 +322,6 @@ class SaToken implements SatokenInterface
         if (!self::validateTokenFormat($token)) {
             return false;
         }
-
-        $config = self::getConfig();
         $tokenKey = "satoken:token:$token";
         $tokenInfo = Cache::get($tokenKey);
         if (empty($tokenInfo)) {
