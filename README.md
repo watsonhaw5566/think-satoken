@@ -41,8 +41,6 @@ return [
     'max_login_count' => 10,
     // 是否启用滑动续期
     'auto_renew' => true,
-    // 缓存存储类型，可选 'file' 或 'redis' (默认file)
-    'store_type' => 'file',
 ];
 ```
 
