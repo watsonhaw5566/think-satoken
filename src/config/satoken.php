@@ -14,6 +14,4 @@ return [
     'max_login_count' => 10,
     // 是否启用滑动续期（访问自动续期）
     'auto_renew' => true,
-    // 缓存驱动类型（file|redis）
-    'store_type' => 'file',
 ];
