@@ -25,6 +25,7 @@ class SaToken implements SatokenInterface
         'is_concurrent' => true, // 是否允许同一账号多地登录
         'max_login_count' => 10, // 同一账号最大登录数量
         'auto_renew' => true, // 是否启用滑动续期
+        'renew_threshold' => 0.3, // 滑动续期阈值：剩余时间低于此比例才触发续期 (0~1，默认 30%)
     ];
 
     /**
@@ -198,6 +199,83 @@ class SaToken implements SatokenInterface
     }
 
     /**
+     * 滑动续期：如果开启 auto_renew 且剩余时间低于阈值，则刷新 TTL
+     * 仅在需要续期时才写缓存，避免每次请求都产生写操作
+     *
+     * @param string $token 已验证格式的 token
+     * @param array<string, mixed> $tokenInfo 当前 token 信息
+     */
+    private static function renewIfNeeded(string $token, array $tokenInfo): void
+    {
+        $config = self::getConfig();
+        if (empty($config['auto_renew'])) {
+            // 即便关闭滑动续期，也需要保证非并发模式下 loginIdKey 的存在
+            self::ensureLoginIdMappingExists($token, $tokenInfo);
+            return;
+        }
+
+        $timeout = (int) $config['timeout'];
+        $threshold = $config['renew_threshold'];
+        if (! is_numeric($threshold) || $threshold <= 0 || $threshold > 1) {
+            $threshold = 0.3;
+        }
+
+        $expireTime = isset($tokenInfo['expire_time']) ? (int) $tokenInfo['expire_time'] : 0;
+        $remaining = $expireTime - time();
+
+        // 只有剩余时间 < 阈值比例 * timeout 时才真正续期
+        $needsRenew = $remaining < $timeout * $threshold;
+
+        // 刷新 tokenKey 的 TTL
+        $tokenKey = "satoken:token:$token";
+        if ($needsRenew) {
+            $tokenInfo['expire_time'] = time() + $timeout;
+            Cache::set($tokenKey, $tokenInfo, $timeout);
+        }
+
+        // 同步刷新 loginIdKey 的 TTL，或在缺失时重建
+        if (isset($tokenInfo['loginId']) && is_int($tokenInfo['loginId'])) {
+            $loginIdKey = 'satoken:loginId:'.$tokenInfo['loginId'];
+            $mapping = Cache::get($loginIdKey);
+            if (! empty($config['is_concurrent'])) {
+                if (is_array($mapping)) {
+                    if ($needsRenew) {
+                        Cache::set($loginIdKey, $mapping, $timeout);
+                    }
+                }
+            } else {
+                if (empty($mapping)) {
+                    // 非并发模式：loginIdKey 缺失时立即重建（即便不需要续期也需要保持映射一致性）
+                    Cache::set($loginIdKey, $token, $timeout);
+                } elseif ($needsRenew) {
+                    Cache::set($loginIdKey, $mapping, $timeout);
+                }
+            }
+        }
+    }
+
+    /**
+     * 确保非并发模式下 loginIdKey 映射存在（仅在 auto_renew=false 时调用，做最小限度的一致性修复）
+     */
+    private static function ensureLoginIdMappingExists(string $token, array $tokenInfo): void
+    {
+        $config = self::getConfig();
+        if (! empty($config['is_concurrent'])) {
+            return;
+        }
+        if (! isset($tokenInfo['loginId']) || ! is_int($tokenInfo['loginId'])) {
+            return;
+        }
+
+        $loginIdKey = 'satoken:loginId:'.$tokenInfo['loginId'];
+        $mapping = Cache::get($loginIdKey);
+        if (empty($mapping)) {
+            $remaining = (int) ($tokenInfo['expire_time'] - time());
+            Cache::set($loginIdKey, $token, $remaining > 0 ? $remaining : (int) $config['timeout']);
+        }
+    }
+
+    /**
      * 检查是否已登录
      *
      * @param string|null $token 用户token
@@ -218,7 +296,6 @@ class SaToken implements SatokenInterface
             return false;
         }
 
-        $config = self::getConfig();
         // 检查token是否存在且有效
         $tokenKey = "satoken:token:$token";
         $tokenInfo = Cache::get($tokenKey);
@@ -230,25 +307,8 @@ class SaToken implements SatokenInterface
             return false;
         }
 
-        if (! empty($config['auto_renew'])) {
-            $tokenInfo['expire_time'] = time() + (int) $config['timeout'];
-            Cache::set($tokenKey, $tokenInfo, (int) $config['timeout']);
-        }
-
-        // 同步续期 loginId 映射，避免映射早于 token 过期
-        $loginIdKey = 'satoken:loginId:'.$tokenInfo['loginId'];
-        $mapping = Cache::get($loginIdKey);
-        if (! empty($config['is_concurrent'])) {
-            if (is_array($mapping)) {
-                Cache::set($loginIdKey, $mapping, (int) $config['timeout']);
-            }
-        } else {
-            if (! empty($mapping)) {
-                Cache::set($loginIdKey, $mapping, (int) $config['timeout']);
-            } else {
-                Cache::set($loginIdKey, $token, (int) $config['timeout']);
-            }
-        }
+        // 滑动续期（仅在需要时写缓存）
+        self::renewIfNeeded($token, $tokenInfo);
 
         return true;
     }
@@ -283,7 +343,6 @@ class SaToken implements SatokenInterface
             throw new TokenInvalidException('无效的token格式');
         }
 
-        $config = self::getConfig();
         // 获取token信息
         $tokenKey = "satoken:token:$token";
         $tokenInfo = Cache::get($tokenKey);
@@ -294,6 +353,9 @@ class SaToken implements SatokenInterface
         if (! isset($tokenInfo['loginId']) || ! is_int($tokenInfo['loginId'])) {
             throw new TokenInvalidException('token信息不完整');
         }
+
+        // 滑动续期（与 isLogin 保持一致的行为）
+        self::renewIfNeeded($token, $tokenInfo);
 
         return (int) $tokenInfo['loginId'];
     }
@@ -315,12 +377,14 @@ class SaToken implements SatokenInterface
             throw new TokenInvalidException('无效的token格式');
         }
 
-        $config = self::getConfig();
         $tokenKey = "satoken:token:$token";
         $tokenInfo = Cache::get($tokenKey);
         if (! is_array($tokenInfo)) {
             throw new TokenInvalidException('无效的token');
         }
+
+        // 滑动续期（与 isLogin 保持一致的行为）
+        self::renewIfNeeded($token, $tokenInfo);
 
         return $tokenInfo;
     }

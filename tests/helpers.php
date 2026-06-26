@@ -18,6 +18,7 @@ if (! function_exists('config')) {
                     'is_concurrent' => true,
                     'max_login_count' => 10,
                     'auto_renew' => true,
+                    'renew_threshold' => 0.3,
                 ];
             }
 
@@ -44,6 +45,7 @@ if (! function_exists('set_satoken_test_config')) {
             'is_concurrent' => true,
             'max_login_count' => 10,
             'auto_renew' => true,
+            'renew_threshold' => 0.3,
         ];
         $SATOKEN_TEST_CONFIG = array_merge($defaults, $SATOKEN_TEST_CONFIG, $merge);
     }
@@ -59,6 +61,7 @@ if (! function_exists('reset_satoken_test_config')) {
             'is_concurrent' => true,
             'max_login_count' => 10,
             'auto_renew' => true,
+            'renew_threshold' => 0.3,
         ];
     }
 }
