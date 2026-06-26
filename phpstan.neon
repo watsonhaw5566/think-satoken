@@ -1,0 +1,8 @@
+parameters:
+    level: 1
+    paths:
+        - src
+        - tests
+    checkExplicitMixed: false
+    ignoreErrors:
+        - '#^Function json not found\.$#'

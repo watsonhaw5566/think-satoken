@@ -7,9 +7,6 @@ namespace satoken\exception;
  */
 class SatokenException extends \RuntimeException
 {
-    // 错误码
-    protected int $errorCode;
-
     /**
      * 构造函数
      *
@@ -19,7 +16,6 @@ class SatokenException extends \RuntimeException
      */
     public function __construct(string $message = 'SaToken Exception', int $code = 400, ?\Throwable $previous = null)
     {
-        $this->errorCode = $code;
         parent::__construct($message, $code, $previous);
     }
 
@@ -30,6 +26,6 @@ class SatokenException extends \RuntimeException
      */
     public function getErrorCode(): int
     {
-        return $this->errorCode;
+        return (int) $this->getCode();
     }
 }
