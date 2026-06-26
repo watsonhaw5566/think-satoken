@@ -31,12 +31,11 @@ class SaTokenTests extends ThinkTestCase
     }
 
     /**
-     * 测试过期时间与剩余时间查询（默认开启滑动续期）
+     * 测试过期时间与剩余时间查询
      */
     public function test_token_expire_and_remaining_time_queries_work()
     {
-        // 使用较短的超时时间，便于断言
-        set_satoken_test_config(['timeout' => 3, 'auto_renew' => true]);
+        set_satoken_test_config(['timeout' => 3, 'auto_renew' => false]);
 
         $token = SaToken::login(self::TEST_USER_ID);
 
@@ -49,10 +48,74 @@ class SaTokenTests extends ThinkTestCase
         $this->assertGreaterThan(0, $remain);
         $this->assertLessThanOrEqual(3, $remain);
 
-        // 访问一次，滑动续期应使剩余时间回到接近超时时间
+        reset_satoken_test_config();
+    }
+
+    /**
+     * 阈值续期：设置 renew_threshold=1 时，每次访问都应续期（即旧行为）
+     */
+    public function test_renew_threshold_1_always_renews_on_access()
+    {
+        set_satoken_test_config(['timeout' => 3, 'auto_renew' => true, 'renew_threshold' => 1]);
+
+        $token = SaToken::login(self::TEST_USER_ID);
+
+        // 稍等片刻让剩余时间减少
+        usleep(200000);
+
+        // 剩余时间 >= timeout * renew_threshold (= 3 * 1 = 3) 时不续期
+        // 但 usleep 后剩余时间 < 3，所以应该触发续期
         $this->assertTrue(SaToken::isLogin($token));
         $remainAfter = SaToken::getTokenRemainingTime($token);
         $this->assertGreaterThanOrEqual(2, $remainAfter);
+
+        reset_satoken_test_config();
+    }
+
+    /**
+     * 阈值续期：剩余时间高于阈值时不应续期，避免每次请求写缓存
+     */
+    public function test_renew_below_threshold_does_not_rewrite_cache()
+    {
+        set_satoken_test_config(['timeout' => 10, 'auto_renew' => true, 'renew_threshold' => 0.3]);
+
+        $token = SaToken::login(self::TEST_USER_ID);
+
+        // 记录初始过期时间（刚登录，剩余 10s，远高于阈值 3s）
+        $expireBefore = SaToken::getTokenExpireTime($token);
+
+        // 等待 1 秒（剩余 ~9s，仍然高于阈值 3s）
+        sleep(1);
+
+        // 触发 isLogin，不应续期（剩余时间仍高于阈值）
+        $this->assertTrue(SaToken::isLogin($token));
+
+        // 过期时间应保持不变或只减少 ~1 秒（不应该被重置）
+        $expireAfter = SaToken::getTokenExpireTime($token);
+        $this->assertSame($expireBefore, $expireAfter);
+
+        reset_satoken_test_config();
+    }
+
+    /**
+     * 阈值续期：剩余时间低于阈值时才真正续期
+     */
+    public function test_renew_when_remaining_below_threshold_resets_ttl()
+    {
+        set_satoken_test_config(['timeout' => 3, 'auto_renew' => true, 'renew_threshold' => 0.5]);
+
+        $token = SaToken::login(self::TEST_USER_ID);
+
+        // 等待 2 秒，剩余 ~1s < 3 * 0.5 = 1.5s，应该触发续期
+        sleep(2);
+
+        $expireBefore = SaToken::getTokenExpireTime($token);
+        $this->assertTrue(SaToken::isLogin($token));
+        $expireAfter = SaToken::getTokenExpireTime($token);
+
+        // 续期后过期时间应该被重置到当前时间 + timeout
+        $this->assertGreaterThan($expireBefore, $expireAfter);
+        $this->assertGreaterThanOrEqual(time() + 2, $expireAfter);
 
         reset_satoken_test_config();
     }
