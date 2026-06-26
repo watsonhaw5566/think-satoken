@@ -22,11 +22,68 @@ class SaToken implements SatokenInterface
     protected static $config = [
         'token_name' => '', // 自定义 Token name 名称
         'timeout' => 86400, // Token 有效期，单位秒
-        'is_concurrent' => true, // 是否允许同一账号多地登录
+        'is_concurrent' => true, // 是否允许同一账号多地登录（false 等价于 max_login_count=1）
         'max_login_count' => 10, // 同一账号最大登录数量
         'auto_renew' => true, // 是否启用滑动续期
         'renew_threshold' => 0.3, // 滑动续期阈值：剩余时间低于此比例才触发续期 (0~1，默认 30%)
     ];
+
+    /**
+     * 计算实际最大登录数量
+     * is_concurrent=false 等价于 max_login_count=1
+     *
+     * @param array<string, mixed> $config
+     */
+    private static function resolveMaxLoginCount(array $config): int
+    {
+        if (empty($config['is_concurrent'])) {
+            return 1;
+        }
+
+        $max = isset($config['max_login_count']) ? (int) $config['max_login_count'] : 1;
+
+        return $max > 0 ? $max : 1;
+    }
+
+    /**
+     * 清理 token 列表：过滤掉已失效的 token，并删除其 tokenKey
+     *
+     * @param array<int, mixed> $tokenList
+     * @return array<int, string> 清理后的有效 token 列表
+     */
+    private static function cleanTokenList(array $tokenList): array
+    {
+        $cleaned = [];
+        foreach ($tokenList as $t) {
+            if (! is_string($t) || $t === '') {
+                continue;
+            }
+            if (Cache::has("satoken:token:$t")) {
+                $cleaned[] = $t;
+            }
+        }
+
+        return $cleaned;
+    }
+
+    /**
+     * 从 token 列表中安全地移除指定 token
+     *
+     * @param array<int, mixed> $tokenList
+     * @param string $token
+     * @return array<int, string>
+     */
+    private static function removeTokenFromList(array $tokenList, string $token): array
+    {
+        $result = [];
+        foreach ($tokenList as $t) {
+            if (is_string($t) && $t !== $token) {
+                $result[] = $t;
+            }
+        }
+
+        return $result;
+    }
 
     /**
      * 登录功能
@@ -38,62 +95,49 @@ class SaToken implements SatokenInterface
      */
     public static function login(int $loginId, array $extra = []): string
     {
+        $config = self::getConfig();
+        $timeout = (int) $config['timeout'];
+        $maxCount = self::resolveMaxLoginCount($config);
+
         // 创建token
         $token = self::createToken();
 
-        // 生成带loginId信息的token键
         $tokenKey = "satoken:token:$token";
         $loginIdKey = "satoken:loginId:$loginId";
 
-        // 检查是否允许并发登录
-        $config = self::getConfig();
-
-        if (empty($config['is_concurrent'])) {
-            // 不允许并发登录，先清除该用户的所有登录信息（兼容历史并发映射）
-            $old = Cache::get($loginIdKey);
-            if (is_array($old)) {
-                foreach ($old as $t) {
-                    if (is_string($t)) {
-                        Cache::delete("satoken:token:$t");
-                    }
-                }
-            } elseif (is_string($old) && $old !== '') {
-                Cache::delete("satoken:token:$old");
-            }
-
-            // 存储新的token与loginId映射
-            Cache::set($loginIdKey, $token, (int) $config['timeout']);
+        // 读取并清理 token 列表（统一用数组存储）
+        $raw = Cache::get($loginIdKey);
+        if (is_array($raw)) {
+            $tokenList = self::cleanTokenList($raw);
+        } elseif (is_string($raw) && $raw !== '') {
+            // 兼容历史非并发模式下的字符串映射
+            $tokenList = self::cleanTokenList([$raw]);
         } else {
-            // 允许并发登录，检查最大登录数量
-            $tokenList = Cache::get($loginIdKey, []);
-            if (!is_array($tokenList)) {
-                $tokenList = [];
-            }
-
-            // 添加新token到列表
-            $tokenList[] = $token;
-
-            // 如果超过最大登录数量，移除最早的token
-            if (count($tokenList) > (int) $config['max_login_count']) {
-                $oldestToken = array_shift($tokenList);
-                if (is_string($oldestToken)) {
-                    Cache::delete("satoken:token:$oldestToken");
-                }
-            }
-
-            // 存储token列表
-            Cache::set($loginIdKey, $tokenList, (int) $config['timeout']);
+            $tokenList = [];
         }
+
+        // 如果超过最大登录数量，从最早的开始踢出（每次都重新写入 loginIdKey
+        $tokenList[] = $token;
+
+        while (count($tokenList) > $maxCount) {
+            $oldestToken = array_shift($tokenList);
+            if (is_string($oldestToken)) {
+                Cache::delete("satoken:token:$oldestToken");
+            }
+        }
+
+        // 存储 token 列表（统一用数组）
+        Cache::set($loginIdKey, $tokenList, $timeout);
 
         // 存储token信息，包含loginId与自定义内容
         $tokenInfo = [
             'loginId' => $loginId,
             'create_time' => time(),
-            'expire_time' => time() + (int) $config['timeout'],
+            'expire_time' => time() + $timeout,
             'extra' => $extra,
         ];
 
-        Cache::set($tokenKey, $tokenInfo, (int) $config['timeout']);
+        Cache::set($tokenKey, $tokenInfo, $timeout);
 
         return $token;
     }
@@ -113,7 +157,12 @@ class SaToken implements SatokenInterface
             $satokenConfig = [];
         }
 
-        return array_merge(self::$config, $satokenConfig);
+        $merged = [];
+        foreach (array_merge(self::$config, $satokenConfig) as $key => $value) {
+            $merged[(string) $key] = $value;
+        }
+
+        return $merged;
     }
 
     /**
@@ -192,6 +241,7 @@ class SaToken implements SatokenInterface
 
     /**
      * 从缓存中移除 token（同时清理 loginId 映射）
+     * 统一使用数组存储，不再依赖 is_concurrent 配置分支
      *
      * @param  string  $token  要移除的 token
      * @param  int  $loginId  对应的用户ID
@@ -200,23 +250,23 @@ class SaToken implements SatokenInterface
     private static function removeToken(string $token, int $loginId): bool
     {
         $config = self::getConfig();
+        $timeout = (int) $config['timeout'];
         $loginIdKey = "satoken:loginId:$loginId";
 
-        if (! empty($config['is_concurrent'])) {
-            $tokenList = Cache::get($loginIdKey, []);
-            if (is_array($tokenList)) {
-                $tokenList = array_values(array_filter($tokenList, static function ($t) use ($token): bool {
-                    return is_string($t) && $t !== $token;
-                }));
-
-                if (empty($tokenList)) {
-                    Cache::delete($loginIdKey);
-                } else {
-                    Cache::set($loginIdKey, $tokenList, (int) $config['timeout']);
-                }
-            }
+        // 统一用数组方式处理（兼容历史字符串格式）
+        $raw = Cache::get($loginIdKey);
+        if (is_array($raw)) {
+            $tokenList = self::removeTokenFromList($raw, $token);
+        } elseif (is_string($raw) && $raw !== '') {
+            $tokenList = $raw === $token ? [] : [$raw];
         } else {
+            $tokenList = [];
+        }
+
+        if (empty($tokenList)) {
             Cache::delete($loginIdKey);
+        } else {
+            Cache::set($loginIdKey, $tokenList, $timeout);
         }
 
         // 删除token信息
@@ -258,13 +308,43 @@ class SaToken implements SatokenInterface
     private static function renewIfNeeded(string $token, array $tokenInfo): void
     {
         $config = self::getConfig();
+        $timeout = (int) $config['timeout'];
+
+        // 先保证 loginIdKey 映射存在（统一用数组存储，无论并发模式还是非并发模式）
+        $loginIdKey = null;
+        if (isset($tokenInfo['loginId']) && is_int($tokenInfo['loginId'])) {
+            $loginIdKey = 'satoken:loginId:'.$tokenInfo['loginId'];
+            $mapping = Cache::get($loginIdKey);
+
+            $needsRebuild = false;
+            if (is_array($mapping)) {
+                $needsRebuild = ! in_array($token, $mapping, true);
+            } elseif (is_string($mapping) && $mapping !== '') {
+                $needsRebuild = $mapping !== $token;
+            } else {
+                $needsRebuild = true;
+            }
+
+            if ($needsRebuild) {
+                // 重建：先清理再把当前 token 加入
+                if (is_array($mapping)) {
+                    $list = self::cleanTokenList($mapping);
+                } elseif (is_string($mapping) && $mapping !== '') {
+                    $list = Cache::has("satoken:token:$mapping") ? [$mapping] : [];
+                } else {
+                    $list = [];
+                }
+                if (! in_array($token, $list, true)) {
+                    $list[] = $token;
+                }
+                Cache::set($loginIdKey, $list, $timeout);
+            }
+        }
+
         if (empty($config['auto_renew'])) {
-            // 即便关闭滑动续期，也需要保证非并发模式下 loginIdKey 的存在
-            self::ensureLoginIdMappingExists($token, $tokenInfo);
             return;
         }
 
-        $timeout = (int) $config['timeout'];
         $threshold = $config['renew_threshold'];
         if (! is_numeric($threshold) || $threshold <= 0 || $threshold > 1) {
             $threshold = 0.3;
@@ -283,45 +363,12 @@ class SaToken implements SatokenInterface
             Cache::set($tokenKey, $tokenInfo, $timeout);
         }
 
-        // 同步刷新 loginIdKey 的 TTL，或在缺失时重建
-        if (isset($tokenInfo['loginId']) && is_int($tokenInfo['loginId'])) {
-            $loginIdKey = 'satoken:loginId:'.$tokenInfo['loginId'];
+        // 同步刷新 loginIdKey 的 TTL
+        if ($loginIdKey !== null && $needsRenew) {
             $mapping = Cache::get($loginIdKey);
-            if (! empty($config['is_concurrent'])) {
-                if (is_array($mapping)) {
-                    if ($needsRenew) {
-                        Cache::set($loginIdKey, $mapping, $timeout);
-                    }
-                }
-            } else {
-                if (empty($mapping)) {
-                    // 非并发模式：loginIdKey 缺失时立即重建（即便不需要续期也需要保持映射一致性）
-                    Cache::set($loginIdKey, $token, $timeout);
-                } elseif ($needsRenew) {
-                    Cache::set($loginIdKey, $mapping, $timeout);
-                }
+            if ($mapping !== null) {
+                Cache::set($loginIdKey, $mapping, $timeout);
             }
-        }
-    }
-
-    /**
-     * 确保非并发模式下 loginIdKey 映射存在（仅在 auto_renew=false 时调用，做最小限度的一致性修复）
-     */
-    private static function ensureLoginIdMappingExists(string $token, array $tokenInfo): void
-    {
-        $config = self::getConfig();
-        if (! empty($config['is_concurrent'])) {
-            return;
-        }
-        if (! isset($tokenInfo['loginId']) || ! is_int($tokenInfo['loginId'])) {
-            return;
-        }
-
-        $loginIdKey = 'satoken:loginId:'.$tokenInfo['loginId'];
-        $mapping = Cache::get($loginIdKey);
-        if (empty($mapping)) {
-            $remaining = (int) ($tokenInfo['expire_time'] - time());
-            Cache::set($loginIdKey, $token, $remaining > 0 ? $remaining : (int) $config['timeout']);
         }
     }
 
@@ -436,7 +483,16 @@ class SaToken implements SatokenInterface
     {
         $info = self::getTokenInfo($token);
 
-        return isset($info['extra']) && is_array($info['extra']) ? $info['extra'] : [];
+        if (! isset($info['extra']) || ! is_array($info['extra'])) {
+            return [];
+        }
+
+        $result = [];
+        foreach ($info['extra'] as $key => $value) {
+            $result[(string) $key] = $value;
+        }
+
+        return $result;
     }
 
     /**

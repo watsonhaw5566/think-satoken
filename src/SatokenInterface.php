@@ -23,6 +23,7 @@ interface SatokenInterface
      * 登录功能
      *
      * @param  int  $loginId  用户登录ID
+     * @param  array<string, mixed>  $extra  额外自定义内容
      * @return string 生成的token
      */
     public static function login(int $loginId, array $extra = []): string;
@@ -75,9 +76,21 @@ interface SatokenInterface
      */
     public static function getTokenRemainingTime(?string $token = null): int;
 
+    /**
+     * @param  string|null  $token
+     * @return array<string, mixed>
+     */
     public static function getTokenInfo(?string $token = null): array;
 
+    /**
+     * @param  string|null  $token
+     * @return array<string, mixed>
+     */
     public static function getExtra(?string $token = null): array;
 
+    /**
+     * @param  string|null  $token
+     * @param  array<string, mixed>  $extra
+     */
     public static function setExtra(?string $token = null, array $extra = []): bool;
 }
