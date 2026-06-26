@@ -214,6 +214,49 @@ class SaToken implements SatokenInterface
     }
 
     /**
+     * 验证 token 并返回完整的 tokenInfo，失败时抛出对应异常
+     *
+     * 用于统一消除 checkLogin/getCurrentLoginId/getTokenInfo 中的重复代码。
+     *
+     * @param  string  $token  已解析且非空的 token
+     * @return array<string, mixed> 有效的 tokenInfo
+     *
+     * @throws TokenInvalidException 格式无效或缓存中不存在
+     */
+    private static function getValidTokenInfo(string $token): array
+    {
+        if (! self::validateTokenFormat($token)) {
+            throw new TokenInvalidException('无效的token格式');
+        }
+
+        $tokenKey = "satoken:token:$token";
+        $tokenInfo = Cache::get($tokenKey);
+        if (! is_array($tokenInfo)) {
+            throw new TokenInvalidException('无效的token');
+        }
+
+        return $tokenInfo;
+    }
+
+    /**
+     * 从 tokenInfo 中读取 loginId，若缺失或无效则抛出异常
+     *
+     * @param  array<string, mixed>  $tokenInfo
+     * @return int
+     *
+     * @throws TokenInvalidException
+     */
+    private static function extractLoginIdOrThrow(array $tokenInfo): int
+    {
+        $loginId = self::extractLoginId($tokenInfo);
+        if ($loginId === null) {
+            throw new TokenInvalidException('token信息不完整');
+        }
+
+        return $loginId;
+    }
+
+    /**
      * 登出功能
      *
      * @param string|null $token 用户token
@@ -427,21 +470,8 @@ class SaToken implements SatokenInterface
             }
         }
 
-        if (! self::validateTokenFormat($token)) {
-            throw new TokenInvalidException('无效的token格式');
-        }
-
-        $tokenKey = "satoken:token:$token";
-        $tokenInfo = Cache::get($tokenKey);
-        if (! is_array($tokenInfo)) {
-            throw new TokenInvalidException('无效的token');
-        }
-
-        if (self::extractLoginId($tokenInfo) === null) {
-            throw new TokenInvalidException('token信息不完整');
-        }
-
-        // 保持与 isLogin/getCurrentLoginId 一致的行为：通过校验后触发一次滑动续期
+        $tokenInfo = self::getValidTokenInfo($token);
+        self::extractLoginIdOrThrow($tokenInfo);
         self::renewIfNeeded($token, $tokenInfo);
     }
 
@@ -460,22 +490,8 @@ class SaToken implements SatokenInterface
             }
         }
 
-        if (! self::validateTokenFormat($token)) {
-            throw new TokenInvalidException('无效的token格式');
-        }
-
-        $tokenKey = "satoken:token:$token";
-        $tokenInfo = Cache::get($tokenKey);
-        if (! is_array($tokenInfo)) {
-            throw new TokenInvalidException('无效的token');
-        }
-
-        $loginId = self::extractLoginId($tokenInfo);
-        if ($loginId === null) {
-            throw new TokenInvalidException('token信息不完整');
-        }
-
-        // 滑动续期（与 isLogin 保持一致的行为）
+        $tokenInfo = self::getValidTokenInfo($token);
+        $loginId = self::extractLoginIdOrThrow($tokenInfo);
         self::renewIfNeeded($token, $tokenInfo);
 
         return $loginId;
@@ -494,17 +510,7 @@ class SaToken implements SatokenInterface
             }
         }
 
-        if (! self::validateTokenFormat($token)) {
-            throw new TokenInvalidException('无效的token格式');
-        }
-
-        $tokenKey = "satoken:token:$token";
-        $tokenInfo = Cache::get($tokenKey);
-        if (! is_array($tokenInfo)) {
-            throw new TokenInvalidException('无效的token');
-        }
-
-        // 滑动续期（与 isLogin 保持一致的行为）
+        $tokenInfo = self::getValidTokenInfo($token);
         self::renewIfNeeded($token, $tokenInfo);
 
         return $tokenInfo;
