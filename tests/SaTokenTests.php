@@ -449,6 +449,196 @@ class SaTokenTests extends ThinkTestCase
         }
     }
 
+    // =================== checkLogin 测试用例 ===================
+
+    /**
+     * checkLogin：有效token应不抛出任何异常
+     */
+    public function test_check_login_passes_for_valid_token()
+    {
+        $token = SaToken::login(self::TEST_USER_ID);
+
+        $exception = null;
+        try {
+            SaToken::checkLogin($token);
+        } catch (\Throwable $e) {
+            $exception = $e;
+        }
+
+        $this->assertNull($exception, 'checkLogin 对有效 token 不应抛出异常，实际抛出：'
+            . ($exception ? get_class($exception).': '.$exception->getMessage() : 'null'));
+    }
+
+    /**
+     * checkLogin：未提供token应抛出 NotLoginException
+     */
+    public function test_check_login_throws_not_login_exception_when_no_token()
+    {
+        $this->expectException(NotLoginException::class);
+        SaToken::checkLogin(null);
+    }
+
+    /**
+     * checkLogin：空字符串token同样应视为未提供
+     */
+    public function test_check_login_throws_not_login_exception_for_empty_string_token()
+    {
+        $this->expectException(NotLoginException::class);
+        SaToken::checkLogin('');
+    }
+
+    /**
+     * checkLogin：格式错误应抛出 TokenInvalidException（无效的token格式）
+     */
+    public function test_check_login_throws_token_invalid_exception_for_bad_format()
+    {
+        $caught = false;
+        try {
+            SaToken::checkLogin('not-a-valid-token');
+        } catch (TokenInvalidException $e) {
+            $this->assertEquals('无效的token格式', $e->getMessage());
+            $caught = true;
+        }
+
+        $this->assertTrue($caught, 'checkLogin 对格式错误的 token 应抛出 TokenInvalidException("无效的token格式")');
+    }
+
+    /**
+     * checkLogin：格式正确但缓存中不存在（伪造的UUID）应抛出 TokenInvalidException（无效的token）
+     */
+    public function test_check_login_throws_token_invalid_exception_for_unknown_token()
+    {
+        $fakeToken = SaToken::createToken(); // 格式合法但从未登录过
+
+        $caught = false;
+        try {
+            SaToken::checkLogin($fakeToken);
+        } catch (TokenInvalidException $e) {
+            $this->assertEquals('无效的token', $e->getMessage());
+            $caught = true;
+        }
+
+        $this->assertTrue($caught, 'checkLogin 对格式合法但不存在的 token 应抛出 TokenInvalidException("无效的token")');
+    }
+
+    /**
+     * checkLogin：已登出/踢出的token应抛出 TokenInvalidException
+     */
+    public function test_check_login_throws_token_invalid_exception_after_logout()
+    {
+        $token = SaToken::login(self::TEST_USER_ID);
+        SaToken::logout($token);
+
+        $this->expectException(TokenInvalidException::class);
+        SaToken::checkLogin($token);
+    }
+
+    /**
+     * checkLogin：过期后应抛出 TokenInvalidException
+     */
+    public function test_check_login_throws_token_invalid_exception_after_expiry()
+    {
+        set_satoken_test_config(['timeout' => 1, 'auto_renew' => false]);
+
+        $token = SaToken::login(self::TEST_USER_ID);
+        sleep(2);
+
+        $this->expectException(TokenInvalidException::class);
+        SaToken::checkLogin($token);
+
+        reset_satoken_test_config();
+    }
+
+    /**
+     * checkLogin：token信息中缺少loginId应抛出 TokenInvalidException（token信息不完整）
+     */
+    public function test_check_login_throws_token_invalid_exception_for_missing_login_id()
+    {
+        $token = SaToken::createToken();
+        $tokenKey = "satoken:token:$token";
+        // 手动塞入缺少 loginId 的信息
+        Cache::set($tokenKey, ['extra' => ['role' => 'admin'], 'create_time' => time()], 60);
+
+        $caught = false;
+        try {
+            SaToken::checkLogin($token);
+        } catch (TokenInvalidException $e) {
+            $this->assertEquals('token信息不完整', $e->getMessage());
+            $caught = true;
+        }
+
+        $this->assertTrue($caught, 'checkLogin 对缺少 loginId 的 token 应抛出 TokenInvalidException("token信息不完整")');
+    }
+
+    /**
+     * checkLogin：不同用户的 token 都能被正确校验
+     */
+    public function test_check_login_works_for_multiple_users()
+    {
+        $tokenA = SaToken::login(self::TEST_USER_ID);
+        $tokenB = SaToken::login(self::ANOTHER_USER_ID);
+
+        $exception = null;
+        try {
+            SaToken::checkLogin($tokenA);
+            SaToken::checkLogin($tokenB);
+        } catch (\Throwable $e) {
+            $exception = $e;
+        }
+
+        $this->assertNull($exception, 'checkLogin 对多个用户的有效 token 不应抛出异常');
+    }
+
+    /**
+     * checkLogin：通过校验后应触发滑动续期（剩余时间低于阈值时刷新 TTL）
+     */
+    public function test_check_login_triggers_renew_when_below_threshold()
+    {
+        set_satoken_test_config(['timeout' => 3, 'auto_renew' => true, 'renew_threshold' => 0.8]);
+
+        $token = SaToken::login(self::TEST_USER_ID);
+        $expireBefore = SaToken::getTokenExpireTime($token);
+
+        sleep(2); // 剩余时间约 1s，低于 3*0.8=2.4s 阈值
+
+        SaToken::checkLogin($token);
+
+        $expireAfter = SaToken::getTokenExpireTime($token);
+        $this->assertGreaterThan($expireBefore, $expireAfter,
+            'checkLogin 通过校验后应触发滑动续期，expire_time 应被刷新');
+
+        reset_satoken_test_config();
+    }
+
+    /**
+     * checkLogin：与 isLogin 保持一致的成功/失败判定（同一token两边结果应相同）
+     */
+    public function test_check_login_consistent_with_is_login()
+    {
+        $validToken = SaToken::login(self::TEST_USER_ID);
+        $invalidToken = SaToken::createToken();
+
+        // isLogin=true 的 token，checkLogin 也应通过
+        $this->assertTrue(SaToken::isLogin($validToken));
+        $thrown = null;
+        try {
+            SaToken::checkLogin($validToken);
+        } catch (\Throwable $e) {
+            $thrown = $e;
+        }
+        $this->assertNull($thrown, 'isLogin 为 true 的 token，checkLogin 也应通过');
+
+        // isLogin=false 的 token，checkLogin 也应抛异常
+        $this->assertFalse(SaToken::isLogin($invalidToken));
+        $thrown = null;
+        try {
+            SaToken::checkLogin($invalidToken);
+        } catch (\Throwable $e) {
+            $thrown = $e;
+        }
+        $this->assertNotNull($thrown, 'isLogin 为 false 的 token，checkLogin 应抛出异常');
+    }
+
     /**
      * 测试强制踢出用户功能
      */
