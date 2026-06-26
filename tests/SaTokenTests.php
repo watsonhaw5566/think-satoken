@@ -523,7 +523,7 @@ class SaTokenTests extends ThinkTestCase
     }
 
     /**
-     * 非并发模式：后一次登录应替换前一次登录
+     * 非并发模式：后一次登录应替换前一次登录（统一用数组存储）
      */
     public function test_non_concurrent_replaces_previous_login()
     {
@@ -537,13 +537,15 @@ class SaTokenTests extends ThinkTestCase
         $this->assertFalse(SaToken::isLogin($t1));
 
         $loginIdKey = 'satoken:loginId:'.self::TEST_USER_ID;
-        $this->assertSame($t2, Cache::get($loginIdKey));
+        $stored = Cache::get($loginIdKey);
+        $this->assertIsArray($stored);
+        $this->assertSame([$t2], array_values($stored));
 
         reset_satoken_test_config();
     }
 
     /**
-     * 非并发模式：历史并发映射为数组时，登录应清理旧数组中的所有令牌
+     * 非并发模式：历史并发映射为数组时，登录应清理旧数组中的所有令牌（统一用数组存储）
      */
     public function test_non_concurrent_cleans_array_mapping_on_mode_switch()
     {
@@ -562,13 +564,15 @@ class SaTokenTests extends ThinkTestCase
 
         $this->assertFalse(Cache::has("satoken:token:$t1"));
         $this->assertFalse(Cache::has("satoken:token:$t2"));
-        $this->assertSame($newToken, Cache::get($loginIdKey));
+        $stored = Cache::get($loginIdKey);
+        $this->assertIsArray($stored);
+        $this->assertSame([$newToken], array_values($stored));
 
         reset_satoken_test_config();
     }
 
     /**
-     * 非并发模式：isLogin在映射缺失时应自动重建映射
+     * 非并发模式：isLogin在映射缺失时应自动重建映射（统一用数组存储）
      */
     public function test_is_login_rebuilds_mapping_when_missing_non_concurrent()
     {
@@ -579,7 +583,9 @@ class SaTokenTests extends ThinkTestCase
         Cache::delete($loginIdKey);
 
         $this->assertTrue(SaToken::isLogin($t));
-        $this->assertSame($t, Cache::get($loginIdKey));
+        $stored = Cache::get($loginIdKey);
+        $this->assertIsArray($stored);
+        $this->assertSame([$t], array_values($stored));
 
         reset_satoken_test_config();
     }
@@ -604,6 +610,252 @@ class SaTokenTests extends ThinkTestCase
         $this->assertIsArray($list);
         $this->assertCount(2, $list);
         $this->assertSame([$t2, $t3], array_values($list));
+
+        reset_satoken_test_config();
+    }
+
+    /**
+     * 改进1：登录时自动清理过期 token，不会把已过期的 token 算入配额
+     * 场景：max_login_count=2，先用两个 token 登录，手动让其中一个过期，再登录新 token
+     * 预期：已过期 token 不占用配额，其他仍有效 token 不会被踢出
+     */
+    public function test_login_cleans_expired_tokens_and_does_not_kick_valid_ones()
+    {
+        set_satoken_test_config(['is_concurrent' => true, 'max_login_count' => 2, 'timeout' => 60]);
+
+        $loginId = self::TEST_USER_ID;
+        $loginIdKey = 'satoken:loginId:'.$loginId;
+
+        // 1. 先登录两个 token
+        $t1 = SaToken::login($loginId);
+        $t2 = SaToken::login($loginId);
+        $this->assertTrue(SaToken::isLogin($t1));
+        $this->assertTrue(SaToken::isLogin($t2));
+
+        // 2. 手动让 t1 过期（删除其 tokenKey，模拟自然过期）
+        Cache::delete("satoken:token:$t1");
+
+        // 3. 现在登录新的 token t3
+        $t3 = SaToken::login($loginId);
+
+        // 4. 因为 t1 已过期，清理后列表只剩 [t2]，添加 t3 后为 [t2, t3]
+        //    t2 不应被踢出
+        $this->assertTrue(SaToken::isLogin($t2));
+        $this->assertTrue(SaToken::isLogin($t3));
+
+        $list = Cache::get($loginIdKey);
+        $this->assertIsArray($list);
+        $this->assertCount(2, $list);
+        $this->assertSame([$t2, $t3], array_values($list));
+
+        reset_satoken_test_config();
+    }
+
+    /**
+     * 改进1（变体）：多个过期 token 堆积时，登录后应清理全部过期 token
+     * 场景：max_login_count=3，先用3个 token 登录，让其中2个过期，再登录2个新 token
+     * 预期：2个过期 token 被清理，3个有效 token 保留，不发生误踢出
+     */
+    public function test_login_cleans_multiple_expired_tokens_from_list()
+    {
+        set_satoken_test_config(['is_concurrent' => true, 'max_login_count' => 3, 'timeout' => 60]);
+
+        $loginId = self::TEST_USER_ID;
+        $loginIdKey = 'satoken:loginId:'.$loginId;
+
+        $t1 = SaToken::login($loginId);
+        $t2 = SaToken::login($loginId);
+        $t3 = SaToken::login($loginId);
+
+        // 让 t1 和 t2 过期
+        Cache::delete("satoken:token:$t1");
+        Cache::delete("satoken:token:$t2");
+
+        // 登录两个新 token
+        $t4 = SaToken::login($loginId);
+        $t5 = SaToken::login($loginId);
+
+        // t3 仍然有效，不应被踢出
+        $this->assertTrue(SaToken::isLogin($t3));
+        $this->assertTrue(SaToken::isLogin($t4));
+        $this->assertTrue(SaToken::isLogin($t5));
+
+        $list = Cache::get($loginIdKey);
+        $this->assertIsArray($list);
+        $this->assertCount(3, $list);
+        $this->assertSame([$t3, $t4, $t5], array_values($list));
+
+        reset_satoken_test_config();
+    }
+
+    /**
+     * 改进2：并发模式下 loginIdKey 丢失后，isLogin 也能自动重建映射
+     * 场景：并发模式下登录2个 token，手动删除 loginIdKey，然后用其中一个 token 访问 isLogin
+     * 预期：loginIdKey 被重建为包含该 token 的列表，另一个 token 需重新访问才会被加入
+     */
+    public function test_concurrent_islogin_rebuilds_mapping_when_loginidkey_missing()
+    {
+        set_satoken_test_config(['is_concurrent' => true, 'max_login_count' => 5, 'timeout' => 60]);
+
+        $loginId = self::TEST_USER_ID;
+        $loginIdKey = 'satoken:loginId:'.$loginId;
+
+        $t1 = SaToken::login($loginId);
+        $t2 = SaToken::login($loginId);
+
+        // 删除反向映射
+        Cache::delete($loginIdKey);
+        $this->assertFalse(Cache::has($loginIdKey));
+
+        // 用 t1 访问 isLogin，应重建映射
+        $this->assertTrue(SaToken::isLogin($t1));
+
+        $stored = Cache::get($loginIdKey);
+        $this->assertIsArray($stored);
+        $this->assertContains($t1, $stored);
+
+        // t1 自身仍然有效
+        $this->assertTrue(SaToken::isLogin($t1));
+        // t2 的 tokenKey 仍然存在，所以仍然有效
+        $this->assertTrue(SaToken::isLogin($t2));
+
+        reset_satoken_test_config();
+    }
+
+    /**
+     * 改进3：兼容历史字符串格式的 loginIdKey（旧版本非并发模式存字符串）
+     * 场景：手动构造一个旧格式的 loginIdKey（存储字符串 token），然后调用 logout/kickout
+     * 预期：能正确读取、清理，并最终转换为数组格式
+     */
+    public function test_login_compatible_with_legacy_string_loginidkey()
+    {
+        set_satoken_test_config(['is_concurrent' => true, 'max_login_count' => 3, 'timeout' => 60]);
+
+        $loginId = self::TEST_USER_ID;
+        $loginIdKey = 'satoken:loginId:'.$loginId;
+
+        // 模拟旧版本：loginIdKey 存字符串（非并发模式遗留）
+        $legacyToken = SaToken::createToken();
+        Cache::set("satoken:token:$legacyToken", ['loginId' => $loginId, 'expire_time' => time() + 60], 60);
+        Cache::set($loginIdKey, $legacyToken, 60);
+
+        // 用改进后的代码登录新 token
+        $t1 = SaToken::login($loginId);
+
+        // legacyToken 因为 tokenKey 仍有效，应被保留在列表中
+        $list = Cache::get($loginIdKey);
+        $this->assertIsArray($list);
+        $this->assertContains($legacyToken, $list);
+        $this->assertContains($t1, $list);
+
+        reset_satoken_test_config();
+    }
+
+    /**
+     * 改进4：is_concurrent=false 等价于 max_login_count=1
+     * 场景：设置 is_concurrent=false 或 max_login_count=1，两种配置应表现一致
+     */
+    public function test_non_concurrent_is_equivalent_to_max_login_count_one()
+    {
+        $loginId = self::TEST_USER_ID;
+        $loginIdKey = 'satoken:loginId:'.$loginId;
+
+        // 方案 A：is_concurrent=false
+        set_satoken_test_config(['is_concurrent' => false, 'timeout' => 60]);
+        $a1 = SaToken::login($loginId);
+        $a2 = SaToken::login($loginId);
+        $this->assertFalse(SaToken::isLogin($a1));
+        $this->assertTrue(SaToken::isLogin($a2));
+        $listA = Cache::get($loginIdKey);
+        $this->assertIsArray($listA);
+        $this->assertCount(1, $listA);
+        reset_satoken_test_config();
+
+        // 清理缓存
+        Cache::clear();
+
+        // 方案 B：is_concurrent=true, max_login_count=1
+        set_satoken_test_config(['is_concurrent' => true, 'max_login_count' => 1, 'timeout' => 60]);
+        $b1 = SaToken::login($loginId);
+        $b2 = SaToken::login($loginId);
+        $this->assertFalse(SaToken::isLogin($b1));
+        $this->assertTrue(SaToken::isLogin($b2));
+        $listB = Cache::get($loginIdKey);
+        $this->assertIsArray($listB);
+        $this->assertCount(1, $listB);
+        reset_satoken_test_config();
+    }
+
+    /**
+     * 改进5：逐个踢出 token 后，loginIdKey 被正确更新
+     * 场景：并发模式下登录3个 token，逐个踢出，验证 loginIdKey 的内容
+     */
+    public function test_kickout_sequentially_updates_loginidkey_correctly()
+    {
+        set_satoken_test_config(['is_concurrent' => true, 'max_login_count' => 5, 'timeout' => 60]);
+
+        $loginId = self::TEST_USER_ID;
+        $loginIdKey = 'satoken:loginId:'.$loginId;
+
+        $t1 = SaToken::login($loginId);
+        $t2 = SaToken::login($loginId);
+        $t3 = SaToken::login($loginId);
+
+        // 踢出 t2
+        SaToken::kickout($t2);
+        $this->assertFalse(SaToken::isLogin($t2));
+
+        $list = Cache::get($loginIdKey);
+        $this->assertIsArray($list);
+        $this->assertCount(2, $list);
+        $this->assertContains($t1, $list);
+        $this->assertContains($t3, $list);
+        $this->assertNotContains($t2, $list);
+
+        // 踢出 t1
+        SaToken::kickout($t1);
+        $list = Cache::get($loginIdKey);
+        $this->assertIsArray($list);
+        $this->assertCount(1, $list);
+        $this->assertSame([$t3], array_values($list));
+
+        // 踢出最后一个
+        SaToken::kickout($t3);
+        $this->assertFalse(Cache::has($loginIdKey));
+
+        reset_satoken_test_config();
+    }
+
+    /**
+     * 改进6：loginIdKey 中的列表与实际有效 token 保持一致
+     * 场景：手动在 loginIdKey 列表中塞入不存在的 token，登录新 token 后应被清理
+     */
+    public function test_login_removes_non_existent_tokens_from_loginidkey_list()
+    {
+        set_satoken_test_config(['is_concurrent' => true, 'max_login_count' => 3, 'timeout' => 60]);
+
+        $loginId = self::TEST_USER_ID;
+        $loginIdKey = 'satoken:loginId:'.$loginId;
+
+        // 手动构造一个包含"幽灵 token"的列表（这些 token 的 tokenKey 不存在）
+        $ghost1 = SaToken::createToken();
+        $ghost2 = SaToken::createToken();
+        $validToken = SaToken::login($loginId);
+
+        // 手动往列表中塞入幽灵 token
+        Cache::set($loginIdKey, [$ghost1, $ghost2, $validToken], 60);
+
+        // 登录新 token
+        $newToken = SaToken::login($loginId);
+
+        // 登录后 ghost1 和 ghost2 应被清理，只有 validToken 和 newToken 保留
+        $list = Cache::get($loginIdKey);
+        $this->assertIsArray($list);
+        $this->assertCount(2, $list);
+        $this->assertNotContains($ghost1, $list);
+        $this->assertNotContains($ghost2, $list);
+        $this->assertContains($validToken, $list);
+        $this->assertContains($newToken, $list);
 
         reset_satoken_test_config();
     }
