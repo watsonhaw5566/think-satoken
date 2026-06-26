@@ -1,6 +1,6 @@
 {
   "name": "watsonhaw/think-satoken",
-  "description": "thinkphp sa-token 扩展",
+  "description": "satoken extend for thinkphp6|8",
   "license": "MIT",
   "authors": [
     {
