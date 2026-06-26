@@ -34,7 +34,7 @@
   "scripts": {
     "fix-style": "vendor/bin/pint",
     "test": "vendor/bin/phpunit",
-    "analyze": "phpstan --no-progress --memory-limit=1G"
+    "analyze": "phpstan analyze --no-progress --memory-limit=1G"
   },
   "extra": {
     "think": {

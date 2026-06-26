@@ -2,7 +2,12 @@
 
 // 在全局命名空间中定义config函数，用于测试环境
 if (! function_exists('config')) {
-    function config(?string $name = null, mixed $default = null): mixed
+    /**
+     * @param  string|null  $name
+     * @param  mixed  $default
+     * @return mixed
+     */
+    function config(?string $name = null, $default = null)
     {
         if ($name === 'satoken') {
             global $SATOKEN_TEST_CONFIG;
@@ -24,6 +29,9 @@ if (! function_exists('config')) {
 }
 
 if (! function_exists('set_satoken_test_config')) {
+    /**
+     * @param  array<string, mixed>  $merge
+     */
     function set_satoken_test_config(array $merge): void
     {
         global $SATOKEN_TEST_CONFIG;

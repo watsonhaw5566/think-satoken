@@ -10,6 +10,11 @@ use satoken\SaToken;
 
 class SatokenAuth
 {
+    /**
+     * @param  mixed  $request
+     * @param  Closure(mixed): mixed  $next
+     * @return mixed
+     */
     public function handle($request, Closure $next)
     {
         try {

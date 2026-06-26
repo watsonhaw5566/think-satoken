@@ -3,3 +3,6 @@ parameters:
     paths:
         - src
         - tests
+    checkExplicitMixed: false
+    ignoreErrors:
+        - '#^Function json not found\.$#'

@@ -14,7 +14,11 @@ use think\facade\Request;
  */
 class SaToken implements SatokenInterface
 {
-    // 默认配置存储
+    /**
+     * 默认配置存储
+     *
+     * @var array<string, mixed>
+     */
     protected static $config = [
         'token_name' => '', // 自定义 Token name 名称
         'timeout' => 86400, // Token 有效期，单位秒
@@ -24,17 +28,11 @@ class SaToken implements SatokenInterface
     ];
 
     /**
-     * 生成token
-     *
-     * @return string token
-     */
-    // 添加 Token 签名验证
-    /**
      * 登录功能
      * 将loginId融入token中，并处理并发登录
      *
      * @param int $loginId 用户登录ID
-     * @param array $extra 额外自定义内容
+     * @param array<string, mixed> $extra 额外自定义内容
      * @return string 生成的token
      */
     public static function login(int $loginId, array $extra = []): string
@@ -49,19 +47,21 @@ class SaToken implements SatokenInterface
         // 检查是否允许并发登录
         $config = self::getConfig();
 
-        if (!$config['is_concurrent']) {
+        if (empty($config['is_concurrent'])) {
             // 不允许并发登录，先清除该用户的所有登录信息（兼容历史并发映射）
             $old = Cache::get($loginIdKey);
             if (is_array($old)) {
                 foreach ($old as $t) {
-                    Cache::delete("satoken:token:$t");
+                    if (is_string($t)) {
+                        Cache::delete("satoken:token:$t");
+                    }
                 }
             } elseif (is_string($old) && $old !== '') {
                 Cache::delete("satoken:token:$old");
             }
 
             // 存储新的token与loginId映射
-            Cache::set($loginIdKey, $token, $config['timeout']);
+            Cache::set($loginIdKey, $token, (int) $config['timeout']);
         } else {
             // 允许并发登录，检查最大登录数量
             $tokenList = Cache::get($loginIdKey, []);
@@ -73,24 +73,26 @@ class SaToken implements SatokenInterface
             $tokenList[] = $token;
 
             // 如果超过最大登录数量，移除最早的token
-            if (count($tokenList) > $config['max_login_count']) {
+            if (count($tokenList) > (int) $config['max_login_count']) {
                 $oldestToken = array_shift($tokenList);
-                Cache::delete("satoken:token:$oldestToken");
+                if (is_string($oldestToken)) {
+                    Cache::delete("satoken:token:$oldestToken");
+                }
             }
 
             // 存储token列表
-            Cache::set($loginIdKey, $tokenList, $config['timeout']);
+            Cache::set($loginIdKey, $tokenList, (int) $config['timeout']);
         }
 
         // 存储token信息，包含loginId与自定义内容
         $tokenInfo = [
             'loginId' => $loginId,
             'create_time' => time(),
-            'expire_time' => time() + $config['timeout'],
-            'extra' => is_array($extra) ? $extra : [],
+            'expire_time' => time() + (int) $config['timeout'],
+            'extra' => $extra,
         ];
 
-        Cache::set($tokenKey, $tokenInfo, $config['timeout']);
+        Cache::set($tokenKey, $tokenInfo, (int) $config['timeout']);
 
         return $token;
     }
@@ -100,9 +102,17 @@ class SaToken implements SatokenInterface
         return Uuid::uuid4()->toString();
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     private static function getConfig(): array
     {
-        return array_merge(self::$config, config('satoken'));
+        $satokenConfig = config('satoken');
+        if (! is_array($satokenConfig)) {
+            $satokenConfig = [];
+        }
+
+        return array_merge(self::$config, $satokenConfig);
     }
 
     /**
@@ -130,26 +140,28 @@ class SaToken implements SatokenInterface
         // 获取token信息
         $tokenKey = "satoken:token:$token";
         $tokenInfo = Cache::get($tokenKey);
-
-        if (empty($tokenInfo)) {
+        if (! is_array($tokenInfo)) {
             return false;
         }
 
         // 从loginId对应的token列表中移除该token
+        if (! isset($tokenInfo['loginId']) || ! is_int($tokenInfo['loginId'])) {
+            return false;
+        }
         $loginId = $tokenInfo['loginId'];
         $loginIdKey = "satoken:loginId:$loginId";
 
-        if ($config['is_concurrent']) {
+        if (! empty($config['is_concurrent'])) {
             $tokenList = Cache::get($loginIdKey, []);
             if (is_array($tokenList)) {
-                $tokenList = array_filter($tokenList, function ($t) use ($token) {
-                    return $t !== $token;
-                });
+                $tokenList = array_values(array_filter($tokenList, static function ($t) use ($token): bool {
+                    return is_string($t) && $t !== $token;
+                }));
 
                 if (empty($tokenList)) {
                     Cache::delete($loginIdKey);
                 } else {
-                    Cache::set($loginIdKey, $tokenList, $config['timeout']);
+                    Cache::set($loginIdKey, $tokenList, (int) $config['timeout']);
                 }
             }
         } else {
@@ -157,18 +169,23 @@ class SaToken implements SatokenInterface
         }
 
         // 删除token信息
-        return Cache::delete($tokenKey);
+        Cache::delete($tokenKey);
+
+        return true;
     }
 
     private static function getToken(): ?string
     {
         $config = self::getConfig();
         if (!empty($config['token_name'])) {
-            return Request::header($config['token_name']);
+            $headerValue = Request::header((string) $config['token_name']);
+            if (is_string($headerValue) && $headerValue !== '') {
+                return $headerValue;
+            }
         }
         $authorization = Request::header('Authorization');
-        if ($authorization) {
-            return preg_match('/^Bearer\s+(\S+)$/i', $authorization, $m) ? $m[1] : null;
+        if (is_string($authorization) && $authorization !== '') {
+            return preg_match('/^Bearer\s+(\S+)$/i', $authorization, $m) === 1 ? (string) $m[1] : null;
         }
 
         return null;
@@ -177,7 +194,7 @@ class SaToken implements SatokenInterface
     public static function validateTokenFormat(string $token): bool
     {
         // 严格验证 UUID v4 格式（第三段以 4 开头，第四段变体为 8|9|a|b）
-        return preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i', $token) === 1;
+        return (bool) preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i', $token);
     }
 
     /**
@@ -205,28 +222,31 @@ class SaToken implements SatokenInterface
         // 检查token是否存在且有效
         $tokenKey = "satoken:token:$token";
         $tokenInfo = Cache::get($tokenKey);
-
-        if (empty($tokenInfo)) {
+        if (! is_array($tokenInfo)) {
             return false;
         }
 
-        if (!empty($config['auto_renew'])) {
-            $tokenInfo['expire_time'] = time() + $config['timeout'];
-            Cache::set($tokenKey, $tokenInfo, $config['timeout']);
+        if (! isset($tokenInfo['loginId']) || ! is_int($tokenInfo['loginId'])) {
+            return false;
+        }
+
+        if (! empty($config['auto_renew'])) {
+            $tokenInfo['expire_time'] = time() + (int) $config['timeout'];
+            Cache::set($tokenKey, $tokenInfo, (int) $config['timeout']);
         }
 
         // 同步续期 loginId 映射，避免映射早于 token 过期
-        $loginIdKey = 'satoken:loginId:' . $tokenInfo['loginId'];
+        $loginIdKey = 'satoken:loginId:'.$tokenInfo['loginId'];
         $mapping = Cache::get($loginIdKey);
-        if ($config['is_concurrent']) {
+        if (! empty($config['is_concurrent'])) {
             if (is_array($mapping)) {
-                Cache::set($loginIdKey, $mapping, $config['timeout']);
+                Cache::set($loginIdKey, $mapping, (int) $config['timeout']);
             }
         } else {
-            if (!empty($mapping)) {
-                Cache::set($loginIdKey, $mapping, $config['timeout']);
+            if (! empty($mapping)) {
+                Cache::set($loginIdKey, $mapping, (int) $config['timeout']);
             } else {
-                Cache::set($loginIdKey, $token, $config['timeout']);
+                Cache::set($loginIdKey, $token, (int) $config['timeout']);
             }
         }
 
@@ -267,18 +287,21 @@ class SaToken implements SatokenInterface
         // 获取token信息
         $tokenKey = "satoken:token:$token";
         $tokenInfo = Cache::get($tokenKey);
-
-        if (empty($tokenInfo)) {
+        if (! is_array($tokenInfo)) {
             throw new TokenInvalidException('无效的token');
         }
 
-        if (!isset($tokenInfo['loginId'])) {
+        if (! isset($tokenInfo['loginId']) || ! is_int($tokenInfo['loginId'])) {
             throw new TokenInvalidException('token信息不完整');
         }
 
-        return $tokenInfo['loginId'];
+        return (int) $tokenInfo['loginId'];
     }
 
+    /**
+     * @param string|null $token
+     * @return array<string, mixed>
+     */
     public static function getTokenInfo(?string $token = null): array
     {
         if (empty($token)) {
@@ -295,14 +318,17 @@ class SaToken implements SatokenInterface
         $config = self::getConfig();
         $tokenKey = "satoken:token:$token";
         $tokenInfo = Cache::get($tokenKey);
-
-        if (empty($tokenInfo)) {
+        if (! is_array($tokenInfo)) {
             throw new TokenInvalidException('无效的token');
         }
 
         return $tokenInfo;
     }
 
+    /**
+     * @param string|null $token
+     * @return array<string, mixed>
+     */
     public static function getExtra(?string $token = null): array
     {
         $info = self::getTokenInfo($token);
@@ -310,6 +336,10 @@ class SaToken implements SatokenInterface
         return isset($info['extra']) && is_array($info['extra']) ? $info['extra'] : [];
     }
 
+    /**
+     * @param string|null $token
+     * @param array<string, mixed> $extra
+     */
     public static function setExtra(?string $token = null, array $extra = []): bool
     {
         if (empty($token)) {
@@ -324,20 +354,21 @@ class SaToken implements SatokenInterface
         }
         $tokenKey = "satoken:token:$token";
         $tokenInfo = Cache::get($tokenKey);
-        if (empty($tokenInfo)) {
+        if (! is_array($tokenInfo)) {
             return false;
         }
 
         $remain = 0;
-        if (!empty($tokenInfo['expire_time'])) {
-            $remain = (int)($tokenInfo['expire_time'] - time());
+        if (! empty($tokenInfo['expire_time'])) {
+            $remain = (int) ((int) $tokenInfo['expire_time'] - time());
         }
         if ($remain <= 0) {
             return false;
         }
-        $tokenInfo['extra'] = is_array($extra) ? $extra : [];
+        $tokenInfo['extra'] = $extra;
+        Cache::set($tokenKey, $tokenInfo, $remain);
 
-        return Cache::set($tokenKey, $tokenInfo, $remain);
+        return true;
     }
 
     /**
@@ -361,11 +392,11 @@ class SaToken implements SatokenInterface
 
         $tokenKey = "satoken:token:$token";
         $tokenInfo = Cache::get($tokenKey);
-        if (empty($tokenInfo) || empty($tokenInfo['expire_time'])) {
+        if (! is_array($tokenInfo) || empty($tokenInfo['expire_time'])) {
             return 0;
         }
 
-        return (int)$tokenInfo['expire_time'];
+        return (int) $tokenInfo['expire_time'];
     }
 
     /**
@@ -407,8 +438,11 @@ class SaToken implements SatokenInterface
         $config = self::getConfig();
         $tokenKey = "satoken:token:$token";
         $tokenInfo = Cache::get($tokenKey);
+        if (! is_array($tokenInfo)) {
+            return false;
+        }
 
-        if (empty($tokenInfo)) {
+        if (! isset($tokenInfo['loginId']) || ! is_int($tokenInfo['loginId'])) {
             return false;
         }
 
@@ -416,17 +450,17 @@ class SaToken implements SatokenInterface
         $loginId = $tokenInfo['loginId'];
         $loginIdKey = "satoken:loginId:$loginId";
 
-        if ($config['is_concurrent']) {
+        if (! empty($config['is_concurrent'])) {
             $tokenList = Cache::get($loginIdKey, []);
             if (is_array($tokenList)) {
-                $tokenList = array_filter($tokenList, function ($t) use ($token) {
-                    return $t !== $token;
-                });
+                $tokenList = array_values(array_filter($tokenList, static function ($t) use ($token): bool {
+                    return is_string($t) && $t !== $token;
+                }));
 
                 if (empty($tokenList)) {
                     Cache::delete($loginIdKey);
                 } else {
-                    Cache::set($loginIdKey, $tokenList, $config['timeout']);
+                    Cache::set($loginIdKey, $tokenList, (int) $config['timeout']);
                 }
             }
         } else {
@@ -435,6 +469,8 @@ class SaToken implements SatokenInterface
         }
 
         // 删除token信息
-        return Cache::delete($tokenKey);
+        Cache::delete($tokenKey);
+
+        return true;
     }
 }
