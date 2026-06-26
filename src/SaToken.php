@@ -294,6 +294,11 @@ class SaToken implements SatokenInterface
 
     public static function validateTokenFormat(string $token): bool
     {
+        // 先快速校验长度，避免超长字符串进入正则引擎
+        if (strlen($token) !== 36) {
+            return false;
+        }
+
         // 严格验证 UUID v4 格式（第三段以 4 开头，第四段变体为 8|9|a|b）
         return (bool) preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i', $token);
     }
@@ -401,13 +406,43 @@ class SaToken implements SatokenInterface
     }
 
     /**
-     * 检查是否已登录，如果未登录则抛出异常
+     * 检查是否已登录，如果未登录或token无效则抛出异常
      *
-     * @param string|null $token 用户token
+     * 与 isLogin()/getCurrentLoginId() 的区别：
+     * - isLogin()：静默返回 bool，可用于判断分支
+     * - getCurrentLoginId()：返回 loginId，同时会触发滑动续期
+     * - checkLogin()：纯校验，不返回 loginId，专门用于权限拦截；会触发滑动续期以保持与 isLogin 一致
+     *
+     * @param string|null $token 用户token；为null时自动从请求中获取
+     *
+     * @throws NotLoginException    未提供token
+     * @throws TokenInvalidException token无效或已过期
      */
     public static function checkLogin(?string $token = null): void
     {
-        self::getCurrentLoginId($token);
+        if (empty($token)) {
+            $token = self::getToken();
+            if (empty($token)) {
+                throw new NotLoginException('未提供token');
+            }
+        }
+
+        if (! self::validateTokenFormat($token)) {
+            throw new TokenInvalidException('无效的token格式');
+        }
+
+        $tokenKey = "satoken:token:$token";
+        $tokenInfo = Cache::get($tokenKey);
+        if (! is_array($tokenInfo)) {
+            throw new TokenInvalidException('无效的token');
+        }
+
+        if (self::extractLoginId($tokenInfo) === null) {
+            throw new TokenInvalidException('token信息不完整');
+        }
+
+        // 保持与 isLogin/getCurrentLoginId 一致的行为：通过校验后触发一次滑动续期
+        self::renewIfNeeded($token, $tokenInfo);
     }
 
     /**

@@ -53,6 +53,21 @@ interface SatokenInterface
     public static function isLogin(?string $token = null): bool;
 
     /**
+     * 检查是否已登录，如果未登录或token无效则抛出异常
+     *
+     * 与 isLogin() 的区别：
+     * - isLogin() 仅返回 bool，不会抛出异常
+     * - checkLogin() 在未登录/无效token时抛出对应异常，适合作为权限拦截器使用
+     *
+     * @param  string|null  $token  用户token；为null时自动从请求中获取
+     * @return void
+     *
+     * @throws \satoken\exception\NotLoginException    未提供token
+     * @throws \satoken\exception\TokenInvalidException token无效或已过期
+     */
+    public static function checkLogin(?string $token = null): void;
+
+    /**
      * 获取当前登录用户的loginId
      *
      * @param  string|null  $token  用户token
