@@ -1,6 +1,6 @@
 {
   "name": "watsonhaw/think-satoken",
-  "description": "thinkphp sa-token 扩展",
+  "description": "satoken extend for thinkphp6|8",
   "license": "MIT",
   "authors": [
     {
@@ -28,11 +28,9 @@
   "require-dev": {
     "phpunit/phpunit": "^12.2",
     "topthink/framework": "^6.0||^8.0",
-    "laravel/pint": "^1.25",
     "phpstan/phpstan": "^2.0"
   },
   "scripts": {
-    "fix-style": "vendor/bin/pint",
     "test": "vendor/bin/phpunit",
     "analyze": "phpstan analyze --no-progress --memory-limit=1G"
   },
