@@ -4,27 +4,21 @@
     "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
     "This file is @generated automatically"
   ],
-  "content-hash": "0d1d523126d186023f3201c8d6d50b42",
+  "content-hash": "600a19164ae218e78ffd5b02de29f8ca",
   "packages": [
     {
       "name": "brick/math",
-      "version": "0.14.1",
-      "source": {
-        "type": "git",
-        "url": "https://github.com/brick/math.git",
-        "reference": "f05858549e5f9d7bb45875a75583240a38a281d0"
-      },
+      "version": "0.18.0",
       "dist": {
         "type": "zip",
-        "url": "https://api.github.com/repos/brick/math/zipball/f05858549e5f9d7bb45875a75583240a38a281d0",
-        "reference": "f05858549e5f9d7bb45875a75583240a38a281d0",
+        "url": "https://mirrors.cloud.tencent.com/repository/composer/brick/math/0.18.0/brick-math-0.18.0.zip",
+        "reference": "82944324d1c1bdb2c2618e89978d4e2ad78d69ad",
         "shasum": ""
       },
       "require": {
         "php": "^8.2"
       },
       "require-dev": {
-        "php-coveralls/php-coveralls": "^2.2",
         "phpstan/phpstan": "2.1.22",
         "phpunit/phpunit": "^11.5"
       },
@@ -34,7 +28,6 @@
           "Brick\\Math\\": "src/"
         }
       },
-      "notification-url": "https://packagist.org/downloads/",
       "license": [
         "MIT"
       ],
@@ -56,27 +49,16 @@
       ],
       "support": {
         "issues": "https://github.com/brick/math/issues",
-        "source": "https://github.com/brick/math/tree/0.14.1"
+        "source": "https://github.com/brick/math/tree/0.18.0"
       },
-      "funding": [
-        {
-          "url": "https://github.com/BenMorel",
-          "type": "github"
-        }
-      ],
-      "time": "2025-11-24T14:40:29+00:00"
+      "time": "2026-06-14T18:21:03+00:00"
     },
     {
       "name": "ramsey/collection",
       "version": "2.1.1",
-      "source": {
-        "type": "git",
-        "url": "https://github.com/ramsey/collection.git",
-        "reference": "344572933ad0181accbf4ba763e85a0306a8c5e2"
-      },
       "dist": {
         "type": "zip",
-        "url": "https://api.github.com/repos/ramsey/collection/zipball/344572933ad0181accbf4ba763e85a0306a8c5e2",
+        "url": "https://mirrors.cloud.tencent.com/repository/composer/ramsey/collection/2.1.1/ramsey-collection-2.1.1.zip",
         "reference": "344572933ad0181accbf4ba763e85a0306a8c5e2",
         "shasum": ""
       },
@@ -116,7 +98,6 @@
           "Ramsey\\Collection\\": "src/"
         }
       },
-      "notification-url": "https://packagist.org/downloads/",
       "license": [
         "MIT"
       ],
@@ -144,20 +125,15 @@
     },
     {
       "name": "ramsey/uuid",
-      "version": "4.9.2",
-      "source": {
-        "type": "git",
-        "url": "https://github.com/ramsey/uuid.git",
-        "reference": "8429c78ca35a09f27565311b98101e2826affde0"
-      },
+      "version": "4.9.3",
       "dist": {
         "type": "zip",
-        "url": "https://api.github.com/repos/ramsey/uuid/zipball/8429c78ca35a09f27565311b98101e2826affde0",
-        "reference": "8429c78ca35a09f27565311b98101e2826affde0",
+        "url": "https://mirrors.cloud.tencent.com/repository/composer/ramsey/uuid/4.9.3/ramsey-uuid-4.9.3.zip",
+        "reference": "1df15849d00943a67d677dc9cfd80795f038c9f8",
         "shasum": ""
       },
       "require": {
-        "brick/math": "^0.8.16 || ^0.9 || ^0.10 || ^0.11 || ^0.12 || ^0.13 || ^0.14",
+        "brick/math": ">=0.8.16 <=0.18",
         "php": "^8.0",
         "ramsey/collection": "^1.2 || ^2.0"
       },
@@ -204,7 +180,6 @@
           "Ramsey\\Uuid\\": "src/"
         }
       },
-      "notification-url": "https://packagist.org/downloads/",
       "license": [
         "MIT"
       ],
@@ -216,24 +191,19 @@
       ],
       "support": {
         "issues": "https://github.com/ramsey/uuid/issues",
-        "source": "https://github.com/ramsey/uuid/tree/4.9.2"
+        "source": "https://github.com/ramsey/uuid/tree/4.9.3"
       },
-      "time": "2025-12-14T04:43:48+00:00"
+      "time": "2026-06-18T03:57:49+00:00"
     }
   ],
   "packages-dev": [
     {
       "name": "laravel/pint",
-      "version": "v1.27.0",
-      "source": {
-        "type": "git",
-        "url": "https://github.com/laravel/pint.git",
-        "reference": "c67b4195b75491e4dfc6b00b1c78b68d86f54c90"
-      },
+      "version": "v1.29.3",
       "dist": {
         "type": "zip",
-        "url": "https://api.github.com/repos/laravel/pint/zipball/c67b4195b75491e4dfc6b00b1c78b68d86f54c90",
-        "reference": "c67b4195b75491e4dfc6b00b1c78b68d86f54c90",
+        "url": "https://mirrors.cloud.tencent.com/repository/composer/laravel/pint/v1.29.3/laravel-pint-v1.29.3.zip",
+        "reference": "da1d1111a6aa2e082d2a388b194afe1ba0a05d14",
         "shasum": ""
       },
       "require": {
@@ -244,13 +214,14 @@
         "php": "^8.2.0"
       },
       "require-dev": {
-        "friendsofphp/php-cs-fixer": "^3.92.4",
-        "illuminate/view": "^12.44.0",
-        "larastan/larastan": "^3.8.1",
-        "laravel-zero/framework": "^12.0.4",
+        "friendsofphp/php-cs-fixer": "^3.95.8",
+        "illuminate/view": "^12.62.0",
+        "larastan/larastan": "^3.10.0",
+        "laravel-zero/framework": "^12.1.0",
+        "laravel/agent-detector": "^2.0.2",
         "mockery/mockery": "^1.6.12",
-        "nunomaduro/termwind": "^2.3.3",
-        "pestphp/pest": "^3.8.4"
+        "nunomaduro/termwind": "^2.4.0",
+        "pestphp/pest": "^3.8.6"
       },
       "bin": [
         "builds/pint"
@@ -263,7 +234,6 @@
           "Database\\Factories\\": "database/factories/"
         }
       },
-      "notification-url": "https://packagist.org/downloads/",
       "license": [
         "MIT"
       ],
@@ -287,19 +257,14 @@
         "issues": "https://github.com/laravel/pint/issues",
         "source": "https://github.com/laravel/pint"
       },
-      "time": "2026-01-05T16:49:17+00:00"
+      "time": "2026-06-16T15:34:04+00:00"
     },
     {
       "name": "myclabs/deep-copy",
       "version": "1.13.4",
-      "source": {
-        "type": "git",
-        "url": "https://github.com/myclabs/DeepCopy.git",
-        "reference": "07d290f0c47959fd5eed98c95ee5602db07e0b6a"
-      },
       "dist": {
         "type": "zip",
-        "url": "https://api.github.com/repos/myclabs/DeepCopy/zipball/07d290f0c47959fd5eed98c95ee5602db07e0b6a",
+        "url": "https://mirrors.cloud.tencent.com/repository/composer/myclabs/deep-copy/1.13.4/myclabs-deep-copy-1.13.4.zip",
         "reference": "07d290f0c47959fd5eed98c95ee5602db07e0b6a",
         "shasum": ""
       },
@@ -325,7 +290,6 @@
           "DeepCopy\\": "src/DeepCopy/"
         }
       },
-      "notification-url": "https://packagist.org/downloads/",
       "license": [
         "MIT"
       ],
@@ -341,25 +305,14 @@
         "issues": "https://github.com/myclabs/DeepCopy/issues",
         "source": "https://github.com/myclabs/DeepCopy/tree/1.13.4"
       },
-      "funding": [
-        {
-          "url": "https://tidelift.com/funding/github/packagist/myclabs/deep-copy",
-          "type": "tidelift"
-        }
-      ],
       "time": "2025-08-01T08:46:24+00:00"
     },
     {
       "name": "nikic/php-parser",
       "version": "v5.7.0",
-      "source": {
-        "type": "git",
-        "url": "https://github.com/nikic/PHP-Parser.git",
-        "reference": "dca41cd15c2ac9d055ad70dbfd011130757d1f82"
-      },
       "dist": {
         "type": "zip",
-        "url": "https://api.github.com/repos/nikic/PHP-Parser/zipball/dca41cd15c2ac9d055ad70dbfd011130757d1f82",
+        "url": "https://mirrors.cloud.tencent.com/repository/composer/nikic/php-parser/v5.7.0/nikic-php-parser-v5.7.0.zip",
         "reference": "dca41cd15c2ac9d055ad70dbfd011130757d1f82",
         "shasum": ""
       },
@@ -387,7 +340,6 @@
           "PhpParser\\": "lib/PhpParser"
         }
       },
-      "notification-url": "https://packagist.org/downloads/",
       "license": [
         "BSD-3-Clause"
       ],
@@ -410,14 +362,9 @@
     {
       "name": "phar-io/manifest",
       "version": "2.0.4",
-      "source": {
-        "type": "git",
-        "url": "https://github.com/phar-io/manifest.git",
-        "reference": "54750ef60c58e43759730615a392c31c80e23176"
-      },
       "dist": {
         "type": "zip",
-        "url": "https://api.github.com/repos/phar-io/manifest/zipball/54750ef60c58e43759730615a392c31c80e23176",
+        "url": "https://mirrors.cloud.tencent.com/repository/composer/phar-io/manifest/2.0.4/phar-io-manifest-2.0.4.zip",
         "reference": "54750ef60c58e43759730615a392c31c80e23176",
         "shasum": ""
       },
@@ -440,7 +387,6 @@
           "src/"
         ]
       },
-      "notification-url": "https://packagist.org/downloads/",
       "license": [
         "BSD-3-Clause"
       ],
@@ -466,25 +412,14 @@
         "issues": "https://github.com/phar-io/manifest/issues",
         "source": "https://github.com/phar-io/manifest/tree/2.0.4"
       },
-      "funding": [
-        {
-          "url": "https://github.com/theseer",
-          "type": "github"
-        }
-      ],
       "time": "2024-03-03T12:33:53+00:00"
     },
     {
       "name": "phar-io/version",
       "version": "3.2.1",
-      "source": {
-        "type": "git",
-        "url": "https://github.com/phar-io/version.git",
-        "reference": "4f7fd7836c6f332bb2933569e566a0d6c4cbed74"
-      },
       "dist": {
         "type": "zip",
-        "url": "https://api.github.com/repos/phar-io/version/zipball/4f7fd7836c6f332bb2933569e566a0d6c4cbed74",
+        "url": "https://mirrors.cloud.tencent.com/repository/composer/phar-io/version/3.2.1/phar-io-version-3.2.1.zip",
         "reference": "4f7fd7836c6f332bb2933569e566a0d6c4cbed74",
         "shasum": ""
       },
@@ -497,7 +432,6 @@
           "src/"
         ]
       },
-      "notification-url": "https://packagist.org/downloads/",
       "license": [
         "BSD-3-Clause"
       ],
@@ -526,17 +460,65 @@
       "time": "2022-02-21T01:04:05+00:00"
     },
     {
-      "name": "phpunit/php-code-coverage",
-      "version": "12.5.2",
-      "source": {
-        "type": "git",
-        "url": "https://github.com/sebastianbergmann/php-code-coverage.git",
-        "reference": "4a9739b51cbcb355f6e95659612f92e282a7077b"
-      },
+      "name": "phpstan/phpstan",
+      "version": "2.2.2",
       "dist": {
         "type": "zip",
-        "url": "https://api.github.com/repos/sebastianbergmann/php-code-coverage/zipball/4a9739b51cbcb355f6e95659612f92e282a7077b",
-        "reference": "4a9739b51cbcb355f6e95659612f92e282a7077b",
+        "url": "https://mirrors.cloud.tencent.com/repository/composer/phpstan/phpstan/2.2.2/phpstan-phpstan-2.2.2.zip",
+        "reference": "e5cc34d491a90e79c216d824f60fe21fd4d93bd6",
+        "shasum": ""
+      },
+      "require": {
+        "php": "^7.4|^8.0"
+      },
+      "conflict": {
+        "phpstan/phpstan-shim": "*"
+      },
+      "bin": [
+        "phpstan",
+        "phpstan.phar"
+      ],
+      "type": "library",
+      "autoload": {
+        "files": [
+          "bootstrap.php"
+        ]
+      },
+      "license": [
+        "MIT"
+      ],
+      "authors": [
+        {
+          "name": "Ondřej Mirtes"
+        },
+        {
+          "name": "Markus Staab"
+        },
+        {
+          "name": "Vincent Langlet"
+        }
+      ],
+      "description": "PHPStan - PHP Static Analysis Tool",
+      "keywords": [
+        "dev",
+        "static analysis"
+      ],
+      "support": {
+        "docs": "https://phpstan.org/user-guide/getting-started",
+        "forum": "https://github.com/phpstan/phpstan/discussions",
+        "issues": "https://github.com/phpstan/phpstan/issues",
+        "security": "https://github.com/phpstan/phpstan/security/policy",
+        "source": "https://github.com/phpstan/phpstan-src"
+      },
+      "time": "2026-06-05T09:00:01+00:00"
+    },
+    {
+      "name": "phpunit/php-code-coverage",
+      "version": "12.5.7",
+      "dist": {
+        "type": "zip",
+        "url": "https://mirrors.cloud.tencent.com/repository/composer/phpunit/php-code-coverage/12.5.7/phpunit-php-code-coverage-12.5.7.zip",
+        "reference": "186dab580576598076de6818596d12b61801880e",
         "shasum": ""
       },
       "require": {
@@ -545,16 +527,15 @@
         "ext-xmlwriter": "*",
         "nikic/php-parser": "^5.7.0",
         "php": ">=8.3",
-        "phpunit/php-file-iterator": "^6.0",
         "phpunit/php-text-template": "^5.0",
         "sebastian/complexity": "^5.0",
-        "sebastian/environment": "^8.0.3",
-        "sebastian/lines-of-code": "^4.0",
+        "sebastian/environment": "^8.1.2",
+        "sebastian/lines-of-code": "^4.0.1",
         "sebastian/version": "^6.0",
         "theseer/tokenizer": "^2.0.1"
       },
       "require-dev": {
-        "phpunit/phpunit": "^12.5.1"
+        "phpunit/phpunit": "^12.5.28"
       },
       "suggest": {
         "ext-pcov": "PHP extension that provides line coverage",
@@ -571,7 +552,6 @@
           "src/"
         ]
       },
-      "notification-url": "https://packagist.org/downloads/",
       "license": [
         "BSD-3-Clause"
       ],
@@ -592,40 +572,17 @@
       "support": {
         "issues": "https://github.com/sebastianbergmann/php-code-coverage/issues",
         "security": "https://github.com/sebastianbergmann/php-code-coverage/security/policy",
-        "source": "https://github.com/sebastianbergmann/php-code-coverage/tree/12.5.2"
+        "source": "https://github.com/sebastianbergmann/php-code-coverage/tree/12.5.7"
       },
-      "funding": [
-        {
-          "url": "https://github.com/sebastianbergmann",
-          "type": "github"
-        },
-        {
-          "url": "https://liberapay.com/sebastianbergmann",
-          "type": "liberapay"
-        },
-        {
-          "url": "https://thanks.dev/u/gh/sebastianbergmann",
-          "type": "thanks_dev"
-        },
-        {
-          "url": "https://tidelift.com/funding/github/packagist/phpunit/php-code-coverage",
-          "type": "tidelift"
-        }
-      ],
-      "time": "2025-12-24T07:03:04+00:00"
+      "time": "2026-06-01T13:24:19+00:00"
     },
     {
       "name": "phpunit/php-file-iterator",
-      "version": "6.0.0",
-      "source": {
-        "type": "git",
-        "url": "https://github.com/sebastianbergmann/php-file-iterator.git",
-        "reference": "961bc913d42fe24a257bfff826a5068079ac7782"
-      },
+      "version": "6.0.1",
       "dist": {
         "type": "zip",
-        "url": "https://api.github.com/repos/sebastianbergmann/php-file-iterator/zipball/961bc913d42fe24a257bfff826a5068079ac7782",
-        "reference": "961bc913d42fe24a257bfff826a5068079ac7782",
+        "url": "https://mirrors.cloud.tencent.com/repository/composer/phpunit/php-file-iterator/6.0.1/phpunit-php-file-iterator-6.0.1.zip",
+        "reference": "3d1cd096ef6bea4bf2762ba586e35dbd317cbfd5",
         "shasum": ""
       },
       "require": {
@@ -645,7 +602,6 @@
           "src/"
         ]
       },
-      "notification-url": "https://packagist.org/downloads/",
       "license": [
         "BSD-3-Clause"
       ],
@@ -665,27 +621,16 @@
       "support": {
         "issues": "https://github.com/sebastianbergmann/php-file-iterator/issues",
         "security": "https://github.com/sebastianbergmann/php-file-iterator/security/policy",
-        "source": "https://github.com/sebastianbergmann/php-file-iterator/tree/6.0.0"
+        "source": "https://github.com/sebastianbergmann/php-file-iterator/tree/6.0.1"
       },
-      "funding": [
-        {
-          "url": "https://github.com/sebastianbergmann",
-          "type": "github"
-        }
-      ],
-      "time": "2025-02-07T04:58:37+00:00"
+      "time": "2026-02-02T14:04:18+00:00"
     },
     {
       "name": "phpunit/php-invoker",
       "version": "6.0.0",
-      "source": {
-        "type": "git",
-        "url": "https://github.com/sebastianbergmann/php-invoker.git",
-        "reference": "12b54e689b07a25a9b41e57736dfab6ec9ae5406"
-      },
       "dist": {
         "type": "zip",
-        "url": "https://api.github.com/repos/sebastianbergmann/php-invoker/zipball/12b54e689b07a25a9b41e57736dfab6ec9ae5406",
+        "url": "https://mirrors.cloud.tencent.com/repository/composer/phpunit/php-invoker/6.0.0/phpunit-php-invoker-6.0.0.zip",
         "reference": "12b54e689b07a25a9b41e57736dfab6ec9ae5406",
         "shasum": ""
       },
@@ -710,7 +655,6 @@
           "src/"
         ]
       },
-      "notification-url": "https://packagist.org/downloads/",
       "license": [
         "BSD-3-Clause"
       ],
@@ -731,25 +675,14 @@
         "security": "https://github.com/sebastianbergmann/php-invoker/security/policy",
         "source": "https://github.com/sebastianbergmann/php-invoker/tree/6.0.0"
       },
-      "funding": [
-        {
-          "url": "https://github.com/sebastianbergmann",
-          "type": "github"
-        }
-      ],
       "time": "2025-02-07T04:58:58+00:00"
     },
     {
       "name": "phpunit/php-text-template",
       "version": "5.0.0",
-      "source": {
-        "type": "git",
-        "url": "https://github.com/sebastianbergmann/php-text-template.git",
-        "reference": "e1367a453f0eda562eedb4f659e13aa900d66c53"
-      },
       "dist": {
         "type": "zip",
-        "url": "https://api.github.com/repos/sebastianbergmann/php-text-template/zipball/e1367a453f0eda562eedb4f659e13aa900d66c53",
+        "url": "https://mirrors.cloud.tencent.com/repository/composer/phpunit/php-text-template/5.0.0/phpunit-php-text-template-5.0.0.zip",
         "reference": "e1367a453f0eda562eedb4f659e13aa900d66c53",
         "shasum": ""
       },
@@ -770,7 +703,6 @@
           "src/"
         ]
       },
-      "notification-url": "https://packagist.org/downloads/",
       "license": [
         "BSD-3-Clause"
       ],
@@ -791,25 +723,14 @@
         "security": "https://github.com/sebastianbergmann/php-text-template/security/policy",
         "source": "https://github.com/sebastianbergmann/php-text-template/tree/5.0.0"
       },
-      "funding": [
-        {
-          "url": "https://github.com/sebastianbergmann",
-          "type": "github"
-        }
-      ],
       "time": "2025-02-07T04:59:16+00:00"
     },
     {
       "name": "phpunit/php-timer",
       "version": "8.0.0",
-      "source": {
-        "type": "git",
-        "url": "https://github.com/sebastianbergmann/php-timer.git",
-        "reference": "f258ce36aa457f3aa3339f9ed4c81fc66dc8c2cc"
-      },
       "dist": {
         "type": "zip",
-        "url": "https://api.github.com/repos/sebastianbergmann/php-timer/zipball/f258ce36aa457f3aa3339f9ed4c81fc66dc8c2cc",
+        "url": "https://mirrors.cloud.tencent.com/repository/composer/phpunit/php-timer/8.0.0/phpunit-php-timer-8.0.0.zip",
         "reference": "f258ce36aa457f3aa3339f9ed4c81fc66dc8c2cc",
         "shasum": ""
       },
@@ -830,7 +751,6 @@
           "src/"
         ]
       },
-      "notification-url": "https://packagist.org/downloads/",
       "license": [
         "BSD-3-Clause"
       ],
@@ -851,26 +771,15 @@
         "security": "https://github.com/sebastianbergmann/php-timer/security/policy",
         "source": "https://github.com/sebastianbergmann/php-timer/tree/8.0.0"
       },
-      "funding": [
-        {
-          "url": "https://github.com/sebastianbergmann",
-          "type": "github"
-        }
-      ],
       "time": "2025-02-07T04:59:38+00:00"
     },
     {
       "name": "phpunit/phpunit",
-      "version": "12.5.7",
-      "source": {
-        "type": "git",
-        "url": "https://github.com/sebastianbergmann/phpunit.git",
-        "reference": "79dee3d2685b80518e94b9ea741b3f822b213a5e"
-      },
+      "version": "12.5.30",
       "dist": {
         "type": "zip",
-        "url": "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/79dee3d2685b80518e94b9ea741b3f822b213a5e",
-        "reference": "79dee3d2685b80518e94b9ea741b3f822b213a5e",
+        "url": "https://mirrors.cloud.tencent.com/repository/composer/phpunit/phpunit/12.5.30/phpunit-phpunit-12.5.30.zip",
+        "reference": "900400a5b616d6fb306f9549f6da33ba615d3fbb",
         "shasum": ""
       },
       "require": {
@@ -884,19 +793,20 @@
         "phar-io/manifest": "^2.0.4",
         "phar-io/version": "^3.2.1",
         "php": ">=8.3",
-        "phpunit/php-code-coverage": "^12.5.2",
-        "phpunit/php-file-iterator": "^6.0.0",
+        "phpunit/php-code-coverage": "^12.5.7",
+        "phpunit/php-file-iterator": "^6.0.1",
         "phpunit/php-invoker": "^6.0.0",
         "phpunit/php-text-template": "^5.0.0",
         "phpunit/php-timer": "^8.0.0",
-        "sebastian/cli-parser": "^4.2.0",
-        "sebastian/comparator": "^7.1.4",
+        "sebastian/cli-parser": "^4.2.1",
+        "sebastian/comparator": "^7.1.8",
         "sebastian/diff": "^7.0.0",
-        "sebastian/environment": "^8.0.3",
-        "sebastian/exporter": "^7.0.2",
-        "sebastian/global-state": "^8.0.2",
+        "sebastian/environment": "^8.1.2",
+        "sebastian/exporter": "^7.0.3",
+        "sebastian/global-state": "^8.0.3",
         "sebastian/object-enumerator": "^7.0.0",
-        "sebastian/type": "^6.0.3",
+        "sebastian/recursion-context": "^7.0.1",
+        "sebastian/type": "^6.0.4",
         "sebastian/version": "^6.0.0",
         "staabm/side-effects-detector": "^1.0.5"
       },
@@ -917,7 +827,6 @@
           "src/"
         ]
       },
-      "notification-url": "https://packagist.org/downloads/",
       "license": [
         "BSD-3-Clause"
       ],
@@ -938,43 +847,16 @@
       "support": {
         "issues": "https://github.com/sebastianbergmann/phpunit/issues",
         "security": "https://github.com/sebastianbergmann/phpunit/security/policy",
-        "source": "https://github.com/sebastianbergmann/phpunit/tree/12.5.7"
+        "source": "https://github.com/sebastianbergmann/phpunit/tree/12.5.30"
       },
-      "funding": [
-        {
-          "url": "https://phpunit.de/sponsors.html",
-          "type": "custom"
-        },
-        {
-          "url": "https://github.com/sebastianbergmann",
-          "type": "github"
-        },
-        {
-          "url": "https://liberapay.com/sebastianbergmann",
-          "type": "liberapay"
-        },
-        {
-          "url": "https://thanks.dev/u/gh/sebastianbergmann",
-          "type": "thanks_dev"
-        },
-        {
-          "url": "https://tidelift.com/funding/github/packagist/phpunit/phpunit",
-          "type": "tidelift"
-        }
-      ],
-      "time": "2026-01-24T16:12:53+00:00"
+      "time": "2026-06-15T13:12:30+00:00"
     },
     {
       "name": "psr/container",
       "version": "2.0.2",
-      "source": {
-        "type": "git",
-        "url": "https://github.com/php-fig/container.git",
-        "reference": "c71ecc56dfe541dbd90c5360474fbc405f8d5963"
-      },
       "dist": {
         "type": "zip",
-        "url": "https://api.github.com/repos/php-fig/container/zipball/c71ecc56dfe541dbd90c5360474fbc405f8d5963",
+        "url": "https://mirrors.cloud.tencent.com/repository/composer/psr/container/2.0.2/psr-container-2.0.2.zip",
         "reference": "c71ecc56dfe541dbd90c5360474fbc405f8d5963",
         "shasum": ""
       },
@@ -992,7 +874,6 @@
           "Psr\\Container\\": "src/"
         }
       },
-      "notification-url": "https://packagist.org/downloads/",
       "license": [
         "MIT"
       ],
@@ -1020,14 +901,9 @@
     {
       "name": "psr/http-message",
       "version": "2.0",
-      "source": {
-        "type": "git",
-        "url": "https://github.com/php-fig/http-message.git",
-        "reference": "402d35bcb92c70c026d1a6a9883f06b2ead23d71"
-      },
       "dist": {
         "type": "zip",
-        "url": "https://api.github.com/repos/php-fig/http-message/zipball/402d35bcb92c70c026d1a6a9883f06b2ead23d71",
+        "url": "https://mirrors.cloud.tencent.com/repository/composer/psr/http-message/2.0/psr-http-message-2.0.zip",
         "reference": "402d35bcb92c70c026d1a6a9883f06b2ead23d71",
         "shasum": ""
       },
@@ -1045,7 +921,6 @@
           "Psr\\Http\\Message\\": "src/"
         }
       },
-      "notification-url": "https://packagist.org/downloads/",
       "license": [
         "MIT"
       ],
@@ -1073,14 +948,9 @@
     {
       "name": "psr/log",
       "version": "3.0.2",
-      "source": {
-        "type": "git",
-        "url": "https://github.com/php-fig/log.git",
-        "reference": "f16e1d5863e37f8d8c2a01719f5b34baa2b714d3"
-      },
       "dist": {
         "type": "zip",
-        "url": "https://api.github.com/repos/php-fig/log/zipball/f16e1d5863e37f8d8c2a01719f5b34baa2b714d3",
+        "url": "https://mirrors.cloud.tencent.com/repository/composer/psr/log/3.0.2/psr-log-3.0.2.zip",
         "reference": "f16e1d5863e37f8d8c2a01719f5b34baa2b714d3",
         "shasum": ""
       },
@@ -1098,7 +968,6 @@
           "Psr\\Log\\": "src"
         }
       },
-      "notification-url": "https://packagist.org/downloads/",
       "license": [
         "MIT"
       ],
@@ -1123,14 +992,9 @@
     {
       "name": "psr/simple-cache",
       "version": "3.0.0",
-      "source": {
-        "type": "git",
-        "url": "https://github.com/php-fig/simple-cache.git",
-        "reference": "764e0b3939f5ca87cb904f570ef9be2d78a07865"
-      },
       "dist": {
         "type": "zip",
-        "url": "https://api.github.com/repos/php-fig/simple-cache/zipball/764e0b3939f5ca87cb904f570ef9be2d78a07865",
+        "url": "https://mirrors.cloud.tencent.com/repository/composer/psr/simple-cache/3.0.0/psr-simple-cache-3.0.0.zip",
         "reference": "764e0b3939f5ca87cb904f570ef9be2d78a07865",
         "shasum": ""
       },
@@ -1148,7 +1012,6 @@
           "Psr\\SimpleCache\\": "src/"
         }
       },
-      "notification-url": "https://packagist.org/downloads/",
       "license": [
         "MIT"
       ],
@@ -1173,23 +1036,18 @@
     },
     {
       "name": "sebastian/cli-parser",
-      "version": "4.2.0",
-      "source": {
-        "type": "git",
-        "url": "https://github.com/sebastianbergmann/cli-parser.git",
-        "reference": "90f41072d220e5c40df6e8635f5dafba2d9d4d04"
-      },
+      "version": "4.2.1",
       "dist": {
         "type": "zip",
-        "url": "https://api.github.com/repos/sebastianbergmann/cli-parser/zipball/90f41072d220e5c40df6e8635f5dafba2d9d4d04",
-        "reference": "90f41072d220e5c40df6e8635f5dafba2d9d4d04",
+        "url": "https://mirrors.cloud.tencent.com/repository/composer/sebastian/cli-parser/4.2.1/sebastian-cli-parser-4.2.1.zip",
+        "reference": "7d05781b13f7dec9043a629a21d086ed74582a15",
         "shasum": ""
       },
       "require": {
         "php": ">=8.3"
       },
       "require-dev": {
-        "phpunit/phpunit": "^12.0"
+        "phpunit/phpunit": "^12.5.25"
       },
       "type": "library",
       "extra": {
@@ -1202,7 +1060,6 @@
           "src/"
         ]
       },
-      "notification-url": "https://packagist.org/downloads/",
       "license": [
         "BSD-3-Clause"
       ],
@@ -1218,40 +1075,17 @@
       "support": {
         "issues": "https://github.com/sebastianbergmann/cli-parser/issues",
         "security": "https://github.com/sebastianbergmann/cli-parser/security/policy",
-        "source": "https://github.com/sebastianbergmann/cli-parser/tree/4.2.0"
+        "source": "https://github.com/sebastianbergmann/cli-parser/tree/4.2.1"
       },
-      "funding": [
-        {
-          "url": "https://github.com/sebastianbergmann",
-          "type": "github"
-        },
-        {
-          "url": "https://liberapay.com/sebastianbergmann",
-          "type": "liberapay"
-        },
-        {
-          "url": "https://thanks.dev/u/gh/sebastianbergmann",
-          "type": "thanks_dev"
-        },
-        {
-          "url": "https://tidelift.com/funding/github/packagist/sebastian/cli-parser",
-          "type": "tidelift"
-        }
-      ],
-      "time": "2025-09-14T09:36:45+00:00"
+      "time": "2026-05-17T05:29:34+00:00"
     },
     {
       "name": "sebastian/comparator",
-      "version": "7.1.4",
-      "source": {
-        "type": "git",
-        "url": "https://github.com/sebastianbergmann/comparator.git",
-        "reference": "6a7de5df2e094f9a80b40a522391a7e6022df5f6"
-      },
+      "version": "7.1.8",
       "dist": {
         "type": "zip",
-        "url": "https://api.github.com/repos/sebastianbergmann/comparator/zipball/6a7de5df2e094f9a80b40a522391a7e6022df5f6",
-        "reference": "6a7de5df2e094f9a80b40a522391a7e6022df5f6",
+        "url": "https://mirrors.cloud.tencent.com/repository/composer/sebastian/comparator/7.1.8/sebastian-comparator-7.1.8.zip",
+        "reference": "7c65c1e79836812819705b473a90c12399542485",
         "shasum": ""
       },
       "require": {
@@ -1259,10 +1093,10 @@
         "ext-mbstring": "*",
         "php": ">=8.3",
         "sebastian/diff": "^7.0",
-        "sebastian/exporter": "^7.0"
+        "sebastian/exporter": "^7.0.3"
       },
       "require-dev": {
-        "phpunit/phpunit": "^12.2"
+        "phpunit/phpunit": "^12.5.25"
       },
       "suggest": {
         "ext-bcmath": "For comparing BcMath\\Number objects"
@@ -1278,7 +1112,6 @@
           "src/"
         ]
       },
-      "notification-url": "https://packagist.org/downloads/",
       "license": [
         "BSD-3-Clause"
       ],
@@ -1310,39 +1143,16 @@
       "support": {
         "issues": "https://github.com/sebastianbergmann/comparator/issues",
         "security": "https://github.com/sebastianbergmann/comparator/security/policy",
-        "source": "https://github.com/sebastianbergmann/comparator/tree/7.1.4"
+        "source": "https://github.com/sebastianbergmann/comparator/tree/7.1.8"
       },
-      "funding": [
-        {
-          "url": "https://github.com/sebastianbergmann",
-          "type": "github"
-        },
-        {
-          "url": "https://liberapay.com/sebastianbergmann",
-          "type": "liberapay"
-        },
-        {
-          "url": "https://thanks.dev/u/gh/sebastianbergmann",
-          "type": "thanks_dev"
-        },
-        {
-          "url": "https://tidelift.com/funding/github/packagist/sebastian/comparator",
-          "type": "tidelift"
-        }
-      ],
-      "time": "2026-01-24T09:28:48+00:00"
+      "time": "2026-05-21T04:45:25+00:00"
     },
     {
       "name": "sebastian/complexity",
       "version": "5.0.0",
-      "source": {
-        "type": "git",
-        "url": "https://github.com/sebastianbergmann/complexity.git",
-        "reference": "bad4316aba5303d0221f43f8cee37eb58d384bbb"
-      },
       "dist": {
         "type": "zip",
-        "url": "https://api.github.com/repos/sebastianbergmann/complexity/zipball/bad4316aba5303d0221f43f8cee37eb58d384bbb",
+        "url": "https://mirrors.cloud.tencent.com/repository/composer/sebastian/complexity/5.0.0/sebastian-complexity-5.0.0.zip",
         "reference": "bad4316aba5303d0221f43f8cee37eb58d384bbb",
         "shasum": ""
       },
@@ -1364,7 +1174,6 @@
           "src/"
         ]
       },
-      "notification-url": "https://packagist.org/downloads/",
       "license": [
         "BSD-3-Clause"
       ],
@@ -1382,25 +1191,14 @@
         "security": "https://github.com/sebastianbergmann/complexity/security/policy",
         "source": "https://github.com/sebastianbergmann/complexity/tree/5.0.0"
       },
-      "funding": [
-        {
-          "url": "https://github.com/sebastianbergmann",
-          "type": "github"
-        }
-      ],
       "time": "2025-02-07T04:55:25+00:00"
     },
     {
       "name": "sebastian/diff",
       "version": "7.0.0",
-      "source": {
-        "type": "git",
-        "url": "https://github.com/sebastianbergmann/diff.git",
-        "reference": "7ab1ea946c012266ca32390913653d844ecd085f"
-      },
       "dist": {
         "type": "zip",
-        "url": "https://api.github.com/repos/sebastianbergmann/diff/zipball/7ab1ea946c012266ca32390913653d844ecd085f",
+        "url": "https://mirrors.cloud.tencent.com/repository/composer/sebastian/diff/7.0.0/sebastian-diff-7.0.0.zip",
         "reference": "7ab1ea946c012266ca32390913653d844ecd085f",
         "shasum": ""
       },
@@ -1422,7 +1220,6 @@
           "src/"
         ]
       },
-      "notification-url": "https://packagist.org/downloads/",
       "license": [
         "BSD-3-Clause"
       ],
@@ -1449,33 +1246,22 @@
         "security": "https://github.com/sebastianbergmann/diff/security/policy",
         "source": "https://github.com/sebastianbergmann/diff/tree/7.0.0"
       },
-      "funding": [
-        {
-          "url": "https://github.com/sebastianbergmann",
-          "type": "github"
-        }
-      ],
       "time": "2025-02-07T04:55:46+00:00"
     },
     {
       "name": "sebastian/environment",
-      "version": "8.0.3",
-      "source": {
-        "type": "git",
-        "url": "https://github.com/sebastianbergmann/environment.git",
-        "reference": "24a711b5c916efc6d6e62aa65aa2ec98fef77f68"
-      },
+      "version": "8.1.2",
       "dist": {
         "type": "zip",
-        "url": "https://api.github.com/repos/sebastianbergmann/environment/zipball/24a711b5c916efc6d6e62aa65aa2ec98fef77f68",
-        "reference": "24a711b5c916efc6d6e62aa65aa2ec98fef77f68",
+        "url": "https://mirrors.cloud.tencent.com/repository/composer/sebastian/environment/8.1.2/sebastian-environment-8.1.2.zip",
+        "reference": "9d32c685773823b1983e256ae4ecd48a10d6e439",
         "shasum": ""
       },
       "require": {
         "php": ">=8.3"
       },
       "require-dev": {
-        "phpunit/phpunit": "^12.0"
+        "phpunit/phpunit": "^12.5.26"
       },
       "suggest": {
         "ext-posix": "*"
@@ -1483,7 +1269,7 @@
       "type": "library",
       "extra": {
         "branch-alias": {
-          "dev-main": "8.0-dev"
+          "dev-main": "8.1-dev"
         }
       },
       "autoload": {
@@ -1491,7 +1277,6 @@
           "src/"
         ]
       },
-      "notification-url": "https://packagist.org/downloads/",
       "license": [
         "BSD-3-Clause"
       ],
@@ -1511,49 +1296,26 @@
       "support": {
         "issues": "https://github.com/sebastianbergmann/environment/issues",
         "security": "https://github.com/sebastianbergmann/environment/security/policy",
-        "source": "https://github.com/sebastianbergmann/environment/tree/8.0.3"
+        "source": "https://github.com/sebastianbergmann/environment/tree/8.1.2"
       },
-      "funding": [
-        {
-          "url": "https://github.com/sebastianbergmann",
-          "type": "github"
-        },
-        {
-          "url": "https://liberapay.com/sebastianbergmann",
-          "type": "liberapay"
-        },
-        {
-          "url": "https://thanks.dev/u/gh/sebastianbergmann",
-          "type": "thanks_dev"
-        },
-        {
-          "url": "https://tidelift.com/funding/github/packagist/sebastian/environment",
-          "type": "tidelift"
-        }
-      ],
-      "time": "2025-08-12T14:11:56+00:00"
+      "time": "2026-05-25T13:40:20+00:00"
     },
     {
       "name": "sebastian/exporter",
-      "version": "7.0.2",
-      "source": {
-        "type": "git",
-        "url": "https://github.com/sebastianbergmann/exporter.git",
-        "reference": "016951ae10980765e4e7aee491eb288c64e505b7"
-      },
+      "version": "7.0.3",
       "dist": {
         "type": "zip",
-        "url": "https://api.github.com/repos/sebastianbergmann/exporter/zipball/016951ae10980765e4e7aee491eb288c64e505b7",
-        "reference": "016951ae10980765e4e7aee491eb288c64e505b7",
+        "url": "https://mirrors.cloud.tencent.com/repository/composer/sebastian/exporter/7.0.3/sebastian-exporter-7.0.3.zip",
+        "reference": "c5e21b5de653ce0a769fb36f5cdfcb5e7a32cf23",
         "shasum": ""
       },
       "require": {
         "ext-mbstring": "*",
         "php": ">=8.3",
-        "sebastian/recursion-context": "^7.0"
+        "sebastian/recursion-context": "^7.0.1"
       },
       "require-dev": {
-        "phpunit/phpunit": "^12.0"
+        "phpunit/phpunit": "^12.5.25"
       },
       "type": "library",
       "extra": {
@@ -1566,7 +1328,6 @@
           "src/"
         ]
       },
-      "notification-url": "https://packagist.org/downloads/",
       "license": [
         "BSD-3-Clause"
       ],
@@ -1601,50 +1362,27 @@
       "support": {
         "issues": "https://github.com/sebastianbergmann/exporter/issues",
         "security": "https://github.com/sebastianbergmann/exporter/security/policy",
-        "source": "https://github.com/sebastianbergmann/exporter/tree/7.0.2"
+        "source": "https://github.com/sebastianbergmann/exporter/tree/7.0.3"
       },
-      "funding": [
-        {
-          "url": "https://github.com/sebastianbergmann",
-          "type": "github"
-        },
-        {
-          "url": "https://liberapay.com/sebastianbergmann",
-          "type": "liberapay"
-        },
-        {
-          "url": "https://thanks.dev/u/gh/sebastianbergmann",
-          "type": "thanks_dev"
-        },
-        {
-          "url": "https://tidelift.com/funding/github/packagist/sebastian/exporter",
-          "type": "tidelift"
-        }
-      ],
-      "time": "2025-09-24T06:16:11+00:00"
+      "time": "2026-05-20T04:37:17+00:00"
     },
     {
       "name": "sebastian/global-state",
-      "version": "8.0.2",
-      "source": {
-        "type": "git",
-        "url": "https://github.com/sebastianbergmann/global-state.git",
-        "reference": "ef1377171613d09edd25b7816f05be8313f9115d"
-      },
+      "version": "8.0.3",
       "dist": {
         "type": "zip",
-        "url": "https://api.github.com/repos/sebastianbergmann/global-state/zipball/ef1377171613d09edd25b7816f05be8313f9115d",
-        "reference": "ef1377171613d09edd25b7816f05be8313f9115d",
+        "url": "https://mirrors.cloud.tencent.com/repository/composer/sebastian/global-state/8.0.3/sebastian-global-state-8.0.3.zip",
+        "reference": "b164d3274d6537ab462591c5755f76a8f5b1aae9",
         "shasum": ""
       },
       "require": {
         "php": ">=8.3",
         "sebastian/object-reflector": "^5.0",
-        "sebastian/recursion-context": "^7.0"
+        "sebastian/recursion-context": "^7.0.1"
       },
       "require-dev": {
         "ext-dom": "*",
-        "phpunit/phpunit": "^12.0"
+        "phpunit/phpunit": "^12.5.28"
       },
       "type": "library",
       "extra": {
@@ -1657,7 +1395,6 @@
           "src/"
         ]
       },
-      "notification-url": "https://packagist.org/downloads/",
       "license": [
         "BSD-3-Clause"
       ],
@@ -1675,48 +1412,25 @@
       "support": {
         "issues": "https://github.com/sebastianbergmann/global-state/issues",
         "security": "https://github.com/sebastianbergmann/global-state/security/policy",
-        "source": "https://github.com/sebastianbergmann/global-state/tree/8.0.2"
+        "source": "https://github.com/sebastianbergmann/global-state/tree/8.0.3"
       },
-      "funding": [
-        {
-          "url": "https://github.com/sebastianbergmann",
-          "type": "github"
-        },
-        {
-          "url": "https://liberapay.com/sebastianbergmann",
-          "type": "liberapay"
-        },
-        {
-          "url": "https://thanks.dev/u/gh/sebastianbergmann",
-          "type": "thanks_dev"
-        },
-        {
-          "url": "https://tidelift.com/funding/github/packagist/sebastian/global-state",
-          "type": "tidelift"
-        }
-      ],
-      "time": "2025-08-29T11:29:25+00:00"
+      "time": "2026-06-01T15:10:33+00:00"
     },
     {
       "name": "sebastian/lines-of-code",
-      "version": "4.0.0",
-      "source": {
-        "type": "git",
-        "url": "https://github.com/sebastianbergmann/lines-of-code.git",
-        "reference": "97ffee3bcfb5805568d6af7f0f893678fc076d2f"
-      },
+      "version": "4.0.1",
       "dist": {
         "type": "zip",
-        "url": "https://api.github.com/repos/sebastianbergmann/lines-of-code/zipball/97ffee3bcfb5805568d6af7f0f893678fc076d2f",
-        "reference": "97ffee3bcfb5805568d6af7f0f893678fc076d2f",
+        "url": "https://mirrors.cloud.tencent.com/repository/composer/sebastian/lines-of-code/4.0.1/sebastian-lines-of-code-4.0.1.zip",
+        "reference": "d543b8ef219dcd8da262cbb958639a96bedba10e",
         "shasum": ""
       },
       "require": {
-        "nikic/php-parser": "^5.0",
+        "nikic/php-parser": "^5.7.0",
         "php": ">=8.3"
       },
       "require-dev": {
-        "phpunit/phpunit": "^12.0"
+        "phpunit/phpunit": "^12.5.25"
       },
       "type": "library",
       "extra": {
@@ -1729,7 +1443,6 @@
           "src/"
         ]
       },
-      "notification-url": "https://packagist.org/downloads/",
       "license": [
         "BSD-3-Clause"
       ],
@@ -1745,27 +1458,16 @@
       "support": {
         "issues": "https://github.com/sebastianbergmann/lines-of-code/issues",
         "security": "https://github.com/sebastianbergmann/lines-of-code/security/policy",
-        "source": "https://github.com/sebastianbergmann/lines-of-code/tree/4.0.0"
+        "source": "https://github.com/sebastianbergmann/lines-of-code/tree/4.0.1"
       },
-      "funding": [
-        {
-          "url": "https://github.com/sebastianbergmann",
-          "type": "github"
-        }
-      ],
-      "time": "2025-02-07T04:57:28+00:00"
+      "time": "2026-05-19T16:22:07+00:00"
     },
     {
       "name": "sebastian/object-enumerator",
       "version": "7.0.0",
-      "source": {
-        "type": "git",
-        "url": "https://github.com/sebastianbergmann/object-enumerator.git",
-        "reference": "1effe8e9b8e068e9ae228e542d5d11b5d16db894"
-      },
       "dist": {
         "type": "zip",
-        "url": "https://api.github.com/repos/sebastianbergmann/object-enumerator/zipball/1effe8e9b8e068e9ae228e542d5d11b5d16db894",
+        "url": "https://mirrors.cloud.tencent.com/repository/composer/sebastian/object-enumerator/7.0.0/sebastian-object-enumerator-7.0.0.zip",
         "reference": "1effe8e9b8e068e9ae228e542d5d11b5d16db894",
         "shasum": ""
       },
@@ -1788,7 +1490,6 @@
           "src/"
         ]
       },
-      "notification-url": "https://packagist.org/downloads/",
       "license": [
         "BSD-3-Clause"
       ],
@@ -1805,25 +1506,14 @@
         "security": "https://github.com/sebastianbergmann/object-enumerator/security/policy",
         "source": "https://github.com/sebastianbergmann/object-enumerator/tree/7.0.0"
       },
-      "funding": [
-        {
-          "url": "https://github.com/sebastianbergmann",
-          "type": "github"
-        }
-      ],
       "time": "2025-02-07T04:57:48+00:00"
     },
     {
       "name": "sebastian/object-reflector",
       "version": "5.0.0",
-      "source": {
-        "type": "git",
-        "url": "https://github.com/sebastianbergmann/object-reflector.git",
-        "reference": "4bfa827c969c98be1e527abd576533293c634f6a"
-      },
       "dist": {
         "type": "zip",
-        "url": "https://api.github.com/repos/sebastianbergmann/object-reflector/zipball/4bfa827c969c98be1e527abd576533293c634f6a",
+        "url": "https://mirrors.cloud.tencent.com/repository/composer/sebastian/object-reflector/5.0.0/sebastian-object-reflector-5.0.0.zip",
         "reference": "4bfa827c969c98be1e527abd576533293c634f6a",
         "shasum": ""
       },
@@ -1844,7 +1534,6 @@
           "src/"
         ]
       },
-      "notification-url": "https://packagist.org/downloads/",
       "license": [
         "BSD-3-Clause"
       ],
@@ -1861,25 +1550,14 @@
         "security": "https://github.com/sebastianbergmann/object-reflector/security/policy",
         "source": "https://github.com/sebastianbergmann/object-reflector/tree/5.0.0"
       },
-      "funding": [
-        {
-          "url": "https://github.com/sebastianbergmann",
-          "type": "github"
-        }
-      ],
       "time": "2025-02-07T04:58:17+00:00"
     },
     {
       "name": "sebastian/recursion-context",
       "version": "7.0.1",
-      "source": {
-        "type": "git",
-        "url": "https://github.com/sebastianbergmann/recursion-context.git",
-        "reference": "0b01998a7d5b1f122911a66bebcb8d46f0c82d8c"
-      },
       "dist": {
         "type": "zip",
-        "url": "https://api.github.com/repos/sebastianbergmann/recursion-context/zipball/0b01998a7d5b1f122911a66bebcb8d46f0c82d8c",
+        "url": "https://mirrors.cloud.tencent.com/repository/composer/sebastian/recursion-context/7.0.1/sebastian-recursion-context-7.0.1.zip",
         "reference": "0b01998a7d5b1f122911a66bebcb8d46f0c82d8c",
         "shasum": ""
       },
@@ -1900,7 +1578,6 @@
           "src/"
         ]
       },
-      "notification-url": "https://packagist.org/downloads/",
       "license": [
         "BSD-3-Clause"
       ],
@@ -1925,45 +1602,22 @@
         "security": "https://github.com/sebastianbergmann/recursion-context/security/policy",
         "source": "https://github.com/sebastianbergmann/recursion-context/tree/7.0.1"
       },
-      "funding": [
-        {
-          "url": "https://github.com/sebastianbergmann",
-          "type": "github"
-        },
-        {
-          "url": "https://liberapay.com/sebastianbergmann",
-          "type": "liberapay"
-        },
-        {
-          "url": "https://thanks.dev/u/gh/sebastianbergmann",
-          "type": "thanks_dev"
-        },
-        {
-          "url": "https://tidelift.com/funding/github/packagist/sebastian/recursion-context",
-          "type": "tidelift"
-        }
-      ],
       "time": "2025-08-13T04:44:59+00:00"
     },
     {
       "name": "sebastian/type",
-      "version": "6.0.3",
-      "source": {
-        "type": "git",
-        "url": "https://github.com/sebastianbergmann/type.git",
-        "reference": "e549163b9760b8f71f191651d22acf32d56d6d4d"
-      },
+      "version": "6.0.4",
       "dist": {
         "type": "zip",
-        "url": "https://api.github.com/repos/sebastianbergmann/type/zipball/e549163b9760b8f71f191651d22acf32d56d6d4d",
-        "reference": "e549163b9760b8f71f191651d22acf32d56d6d4d",
+        "url": "https://mirrors.cloud.tencent.com/repository/composer/sebastian/type/6.0.4/sebastian-type-6.0.4.zip",
+        "reference": "82ff822c2edc46724be9f7411d3163021f602773",
         "shasum": ""
       },
       "require": {
         "php": ">=8.3"
       },
       "require-dev": {
-        "phpunit/phpunit": "^12.0"
+        "phpunit/phpunit": "^12.5.25"
       },
       "type": "library",
       "extra": {
@@ -1976,7 +1630,6 @@
           "src/"
         ]
       },
-      "notification-url": "https://packagist.org/downloads/",
       "license": [
         "BSD-3-Clause"
       ],
@@ -1992,39 +1645,16 @@
       "support": {
         "issues": "https://github.com/sebastianbergmann/type/issues",
         "security": "https://github.com/sebastianbergmann/type/security/policy",
-        "source": "https://github.com/sebastianbergmann/type/tree/6.0.3"
+        "source": "https://github.com/sebastianbergmann/type/tree/6.0.4"
       },
-      "funding": [
-        {
-          "url": "https://github.com/sebastianbergmann",
-          "type": "github"
-        },
-        {
-          "url": "https://liberapay.com/sebastianbergmann",
-          "type": "liberapay"
-        },
-        {
-          "url": "https://thanks.dev/u/gh/sebastianbergmann",
-          "type": "thanks_dev"
-        },
-        {
-          "url": "https://tidelift.com/funding/github/packagist/sebastian/type",
-          "type": "tidelift"
-        }
-      ],
-      "time": "2025-08-09T06:57:12+00:00"
+      "time": "2026-05-20T06:45:45+00:00"
     },
     {
       "name": "sebastian/version",
       "version": "6.0.0",
-      "source": {
-        "type": "git",
-        "url": "https://github.com/sebastianbergmann/version.git",
-        "reference": "3e6ccf7657d4f0a59200564b08cead899313b53c"
-      },
       "dist": {
         "type": "zip",
-        "url": "https://api.github.com/repos/sebastianbergmann/version/zipball/3e6ccf7657d4f0a59200564b08cead899313b53c",
+        "url": "https://mirrors.cloud.tencent.com/repository/composer/sebastian/version/6.0.0/sebastian-version-6.0.0.zip",
         "reference": "3e6ccf7657d4f0a59200564b08cead899313b53c",
         "shasum": ""
       },
@@ -2042,7 +1672,6 @@
           "src/"
         ]
       },
-      "notification-url": "https://packagist.org/downloads/",
       "license": [
         "BSD-3-Clause"
       ],
@@ -2060,25 +1689,14 @@
         "security": "https://github.com/sebastianbergmann/version/security/policy",
         "source": "https://github.com/sebastianbergmann/version/tree/6.0.0"
       },
-      "funding": [
-        {
-          "url": "https://github.com/sebastianbergmann",
-          "type": "github"
-        }
-      ],
       "time": "2025-02-07T05:00:38+00:00"
     },
     {
       "name": "staabm/side-effects-detector",
       "version": "1.0.5",
-      "source": {
-        "type": "git",
-        "url": "https://github.com/staabm/side-effects-detector.git",
-        "reference": "d8334211a140ce329c13726d4a715adbddd0a163"
-      },
       "dist": {
         "type": "zip",
-        "url": "https://api.github.com/repos/staabm/side-effects-detector/zipball/d8334211a140ce329c13726d4a715adbddd0a163",
+        "url": "https://mirrors.cloud.tencent.com/repository/composer/staabm/side-effects-detector/1.0.5/staabm-side-effects-detector-1.0.5.zip",
         "reference": "d8334211a140ce329c13726d4a715adbddd0a163",
         "shasum": ""
       },
@@ -2100,7 +1718,6 @@
           "lib/"
         ]
       },
-      "notification-url": "https://packagist.org/downloads/",
       "license": [
         "MIT"
       ],
@@ -2112,25 +1729,14 @@
         "issues": "https://github.com/staabm/side-effects-detector/issues",
         "source": "https://github.com/staabm/side-effects-detector/tree/1.0.5"
       },
-      "funding": [
-        {
-          "url": "https://github.com/staabm",
-          "type": "github"
-        }
-      ],
       "time": "2024-10-20T05:08:20+00:00"
     },
     {
       "name": "theseer/tokenizer",
       "version": "2.0.1",
-      "source": {
-        "type": "git",
-        "url": "https://github.com/theseer/tokenizer.git",
-        "reference": "7989e43bf381af0eac72e4f0ca5bcbfa81658be4"
-      },
       "dist": {
         "type": "zip",
-        "url": "https://api.github.com/repos/theseer/tokenizer/zipball/7989e43bf381af0eac72e4f0ca5bcbfa81658be4",
+        "url": "https://mirrors.cloud.tencent.com/repository/composer/theseer/tokenizer/2.0.1/theseer-tokenizer-2.0.1.zip",
         "reference": "7989e43bf381af0eac72e4f0ca5bcbfa81658be4",
         "shasum": ""
       },
@@ -2146,7 +1752,6 @@
           "src/"
         ]
       },
-      "notification-url": "https://packagist.org/downloads/",
       "license": [
         "BSD-3-Clause"
       ],
@@ -2162,25 +1767,14 @@
         "issues": "https://github.com/theseer/tokenizer/issues",
         "source": "https://github.com/theseer/tokenizer/tree/2.0.1"
       },
-      "funding": [
-        {
-          "url": "https://github.com/theseer",
-          "type": "github"
-        }
-      ],
       "time": "2025-12-08T11:19:18+00:00"
     },
     {
       "name": "topthink/framework",
       "version": "v8.1.4",
-      "source": {
-        "type": "git",
-        "url": "https://github.com/top-think/framework.git",
-        "reference": "8e7b2b2364047cbf71a38c4e397a9ca0d4ef2b01"
-      },
       "dist": {
         "type": "zip",
-        "url": "https://api.github.com/repos/top-think/framework/zipball/8e7b2b2364047cbf71a38c4e397a9ca0d4ef2b01",
+        "url": "https://mirrors.cloud.tencent.com/repository/composer/topthink/framework/v8.1.4/topthink-framework-v8.1.4.zip",
         "reference": "8e7b2b2364047cbf71a38c4e397a9ca0d4ef2b01",
         "shasum": ""
       },
@@ -2211,7 +1805,6 @@
           "think\\": "src/think/"
         }
       },
-      "notification-url": "https://packagist.org/downloads/",
       "license": [
         "Apache-2.0"
       ],
@@ -2241,14 +1834,9 @@
     {
       "name": "topthink/think-container",
       "version": "v3.0.2",
-      "source": {
-        "type": "git",
-        "url": "https://github.com/top-think/think-container.git",
-        "reference": "b2df244be1e7399ad4c8be1ccc40ed57868f730a"
-      },
       "dist": {
         "type": "zip",
-        "url": "https://api.github.com/repos/top-think/think-container/zipball/b2df244be1e7399ad4c8be1ccc40ed57868f730a",
+        "url": "https://mirrors.cloud.tencent.com/repository/composer/topthink/think-container/v3.0.2/topthink-think-container-v3.0.2.zip",
         "reference": "b2df244be1e7399ad4c8be1ccc40ed57868f730a",
         "shasum": ""
       },
@@ -2267,7 +1855,6 @@
           "think\\": "src"
         }
       },
-      "notification-url": "https://packagist.org/downloads/",
       "license": [
         "Apache-2.0"
       ],
@@ -2287,14 +1874,9 @@
     {
       "name": "topthink/think-helper",
       "version": "v3.1.12",
-      "source": {
-        "type": "git",
-        "url": "https://github.com/top-think/think-helper.git",
-        "reference": "fe277121112a8f1c872e169a733ca80bb11c4acb"
-      },
       "dist": {
         "type": "zip",
-        "url": "https://api.github.com/repos/top-think/think-helper/zipball/fe277121112a8f1c872e169a733ca80bb11c4acb",
+        "url": "https://mirrors.cloud.tencent.com/repository/composer/topthink/think-helper/v3.1.12/topthink-think-helper-v3.1.12.zip",
         "reference": "fe277121112a8f1c872e169a733ca80bb11c4acb",
         "shasum": ""
       },
@@ -2313,7 +1895,6 @@
           "think\\": "src"
         }
       },
-      "notification-url": "https://packagist.org/downloads/",
       "license": [
         "Apache-2.0"
       ],
@@ -2333,14 +1914,9 @@
     {
       "name": "topthink/think-orm",
       "version": "v4.0.51",
-      "source": {
-        "type": "git",
-        "url": "https://github.com/top-think/think-orm.git",
-        "reference": "46abe2f824eb3bcb117d4c0ce93b203b592b79f7"
-      },
       "dist": {
         "type": "zip",
-        "url": "https://api.github.com/repos/top-think/think-orm/zipball/46abe2f824eb3bcb117d4c0ce93b203b592b79f7",
+        "url": "https://mirrors.cloud.tencent.com/repository/composer/topthink/think-orm/v4.0.51/topthink-think-orm-v4.0.51.zip",
         "reference": "46abe2f824eb3bcb117d4c0ce93b203b592b79f7",
         "shasum": ""
       },
@@ -2369,7 +1945,6 @@
           "think\\": "src"
         }
       },
-      "notification-url": "https://packagist.org/downloads/",
       "license": [
         "Apache-2.0"
       ],
@@ -2393,14 +1968,9 @@
     {
       "name": "topthink/think-validate",
       "version": "v3.0.7",
-      "source": {
-        "type": "git",
-        "url": "https://github.com/top-think/think-validate.git",
-        "reference": "85063f6d4ef8ed122f17a36179dc3e0949b30988"
-      },
       "dist": {
         "type": "zip",
-        "url": "https://api.github.com/repos/top-think/think-validate/zipball/85063f6d4ef8ed122f17a36179dc3e0949b30988",
+        "url": "https://mirrors.cloud.tencent.com/repository/composer/topthink/think-validate/v3.0.7/topthink-think-validate-v3.0.7.zip",
         "reference": "85063f6d4ef8ed122f17a36179dc3e0949b30988",
         "shasum": ""
       },
@@ -2417,7 +1987,6 @@
           "think\\": "src"
         }
       },
-      "notification-url": "https://packagist.org/downloads/",
       "license": [
         "Apache-2.0"
       ],
