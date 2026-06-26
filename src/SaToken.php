@@ -117,6 +117,54 @@ class SaToken implements SatokenInterface
     }
 
     /**
+     * 解析 token：如果参数为空则从请求中获取
+     *
+     * @param  string|null  $token
+     * @return string|null 解析后的 token，无法获取时返回 null
+     */
+    private static function resolveToken(?string $token): ?string
+    {
+        if (empty($token)) {
+            $token = self::getToken();
+        }
+
+        return empty($token) ? null : $token;
+    }
+
+    /**
+     * 验证 token 格式并从缓存获取 tokenInfo（不触发续期）
+     *
+     * @param  string  $token  已解析的 token
+     * @return array<string, mixed>|null 格式有效且缓存存在时返回 tokenInfo，否则返回 null
+     */
+    private static function fetchTokenInfo(string $token): ?array
+    {
+        if (! self::validateTokenFormat($token)) {
+            return null;
+        }
+
+        $tokenKey = "satoken:token:$token";
+        $tokenInfo = Cache::get($tokenKey);
+
+        return is_array($tokenInfo) ? $tokenInfo : null;
+    }
+
+    /**
+     * 从 tokenInfo 中提取并验证 loginId
+     *
+     * @param  array<string, mixed>  $tokenInfo
+     * @return int|null 有效时返回 loginId，无效时返回 null
+     */
+    private static function extractLoginId(array $tokenInfo): ?int
+    {
+        if (! isset($tokenInfo['loginId']) || ! is_int($tokenInfo['loginId'])) {
+            return null;
+        }
+
+        return $tokenInfo['loginId'];
+    }
+
+    /**
      * 登出功能
      *
      * @param string|null $token 用户token
@@ -124,32 +172,34 @@ class SaToken implements SatokenInterface
      */
     public static function logout(?string $token = null): bool
     {
+        $token = self::resolveToken($token);
+        if ($token === null) {
+            return false;
+        }
+
+        $tokenInfo = self::fetchTokenInfo($token);
+        if ($tokenInfo === null) {
+            return false;
+        }
+
+        $loginId = self::extractLoginId($tokenInfo);
+        if ($loginId === null) {
+            return false;
+        }
+
+        return self::removeToken($token, $loginId);
+    }
+
+    /**
+     * 从缓存中移除 token（同时清理 loginId 映射）
+     *
+     * @param  string  $token  要移除的 token
+     * @param  int  $loginId  对应的用户ID
+     * @return bool 始终返回 true
+     */
+    private static function removeToken(string $token, int $loginId): bool
+    {
         $config = self::getConfig();
-        if (empty($token)) {
-            // 从请求中获取token
-            $token = self::getToken();
-            if (empty($token)) {
-                return false;
-            }
-        }
-
-        // 添加token格式验证
-        if (!self::validateTokenFormat($token)) {
-            return false;
-        }
-
-        // 获取token信息
-        $tokenKey = "satoken:token:$token";
-        $tokenInfo = Cache::get($tokenKey);
-        if (! is_array($tokenInfo)) {
-            return false;
-        }
-
-        // 从loginId对应的token列表中移除该token
-        if (! isset($tokenInfo['loginId']) || ! is_int($tokenInfo['loginId'])) {
-            return false;
-        }
-        $loginId = $tokenInfo['loginId'];
         $loginIdKey = "satoken:loginId:$loginId";
 
         if (! empty($config['is_concurrent'])) {
@@ -170,7 +220,7 @@ class SaToken implements SatokenInterface
         }
 
         // 删除token信息
-        Cache::delete($tokenKey);
+        Cache::delete("satoken:token:$token");
 
         return true;
     }
@@ -283,27 +333,17 @@ class SaToken implements SatokenInterface
      */
     public static function isLogin(?string $token = null): bool
     {
-        if (empty($token)) {
-            // 从请求中获取token
-            $token = self::getToken();
-            if (empty($token)) {
-                return false;
-            }
-        }
-
-        // 添加token格式验证
-        if (!self::validateTokenFormat($token)) {
+        $token = self::resolveToken($token);
+        if ($token === null) {
             return false;
         }
 
-        // 检查token是否存在且有效
-        $tokenKey = "satoken:token:$token";
-        $tokenInfo = Cache::get($tokenKey);
-        if (! is_array($tokenInfo)) {
+        $tokenInfo = self::fetchTokenInfo($token);
+        if ($tokenInfo === null) {
             return false;
         }
 
-        if (! isset($tokenInfo['loginId']) || ! is_int($tokenInfo['loginId'])) {
+        if (self::extractLoginId($tokenInfo) === null) {
             return false;
         }
 
@@ -338,26 +378,25 @@ class SaToken implements SatokenInterface
             }
         }
 
-        // 添加token格式验证
-        if (!self::validateTokenFormat($token)) {
+        if (! self::validateTokenFormat($token)) {
             throw new TokenInvalidException('无效的token格式');
         }
 
-        // 获取token信息
         $tokenKey = "satoken:token:$token";
         $tokenInfo = Cache::get($tokenKey);
         if (! is_array($tokenInfo)) {
             throw new TokenInvalidException('无效的token');
         }
 
-        if (! isset($tokenInfo['loginId']) || ! is_int($tokenInfo['loginId'])) {
+        $loginId = self::extractLoginId($tokenInfo);
+        if ($loginId === null) {
             throw new TokenInvalidException('token信息不完整');
         }
 
         // 滑动续期（与 isLogin 保持一致的行为）
         self::renewIfNeeded($token, $tokenInfo);
 
-        return (int) $tokenInfo['loginId'];
+        return $loginId;
     }
 
     /**
@@ -373,7 +412,7 @@ class SaToken implements SatokenInterface
             }
         }
 
-        if (!self::validateTokenFormat($token)) {
+        if (! self::validateTokenFormat($token)) {
             throw new TokenInvalidException('无效的token格式');
         }
 
@@ -406,19 +445,13 @@ class SaToken implements SatokenInterface
      */
     public static function setExtra(?string $token = null, array $extra = []): bool
     {
-        if (empty($token)) {
-            $token = self::getToken();
-            if (empty($token)) {
-                return false;
-            }
-        }
-
-        if (!self::validateTokenFormat($token)) {
+        $token = self::resolveToken($token);
+        if ($token === null) {
             return false;
         }
-        $tokenKey = "satoken:token:$token";
-        $tokenInfo = Cache::get($tokenKey);
-        if (! is_array($tokenInfo)) {
+
+        $tokenInfo = self::fetchTokenInfo($token);
+        if ($tokenInfo === null) {
             return false;
         }
 
@@ -430,7 +463,7 @@ class SaToken implements SatokenInterface
             return false;
         }
         $tokenInfo['extra'] = $extra;
-        Cache::set($tokenKey, $tokenInfo, $remain);
+        Cache::set("satoken:token:$token", $tokenInfo, $remain);
 
         return true;
     }
@@ -443,20 +476,13 @@ class SaToken implements SatokenInterface
      */
     public static function getTokenExpireTime(?string $token = null): int
     {
-        if (empty($token)) {
-            $token = self::getToken();
-            if (empty($token)) {
-                return 0;
-            }
-        }
-
-        if (!self::validateTokenFormat($token)) {
+        $token = self::resolveToken($token);
+        if ($token === null) {
             return 0;
         }
 
-        $tokenKey = "satoken:token:$token";
-        $tokenInfo = Cache::get($tokenKey);
-        if (! is_array($tokenInfo) || empty($tokenInfo['expire_time'])) {
+        $tokenInfo = self::fetchTokenInfo($token);
+        if ($tokenInfo === null || empty($tokenInfo['expire_time'])) {
             return 0;
         }
 
@@ -485,56 +511,21 @@ class SaToken implements SatokenInterface
      */
     public static function kickout(?string $token = null): bool
     {
-        if (empty($token)) {
-            // 从请求中获取token
-            $token = self::getToken();
-            if (empty($token)) {
-                return false;
-            }
-        }
-
-        // 添加token格式验证
-        if (!self::validateTokenFormat($token)) {
+        $token = self::resolveToken($token);
+        if ($token === null) {
             return false;
         }
 
-        // 获取token信息
-        $config = self::getConfig();
-        $tokenKey = "satoken:token:$token";
-        $tokenInfo = Cache::get($tokenKey);
-        if (! is_array($tokenInfo)) {
+        $tokenInfo = self::fetchTokenInfo($token);
+        if ($tokenInfo === null) {
             return false;
         }
 
-        if (! isset($tokenInfo['loginId']) || ! is_int($tokenInfo['loginId'])) {
+        $loginId = self::extractLoginId($tokenInfo);
+        if ($loginId === null) {
             return false;
         }
 
-        // 从loginId对应的token列表中移除该token
-        $loginId = $tokenInfo['loginId'];
-        $loginIdKey = "satoken:loginId:$loginId";
-
-        if (! empty($config['is_concurrent'])) {
-            $tokenList = Cache::get($loginIdKey, []);
-            if (is_array($tokenList)) {
-                $tokenList = array_values(array_filter($tokenList, static function ($t) use ($token): bool {
-                    return is_string($t) && $t !== $token;
-                }));
-
-                if (empty($tokenList)) {
-                    Cache::delete($loginIdKey);
-                } else {
-                    Cache::set($loginIdKey, $tokenList, (int) $config['timeout']);
-                }
-            }
-        } else {
-            // 非并发模式下，直接删除loginId对应的token映射
-            Cache::delete($loginIdKey);
-        }
-
-        // 删除token信息
-        Cache::delete($tokenKey);
-
-        return true;
+        return self::removeToken($token, $loginId);
     }
 }
