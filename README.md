@@ -132,8 +132,8 @@ curl -H "Authorization: Bearer $TOKEN" https://api.example.com/user/profile
 curl -H "{token_name}: $TOKEN" https://api.example.com/user/profile
 ```
 
-注意：不建议通过查询参数或请求体传递令牌，以避免在日志、Referer 等渠道泄露。SaToken 会优先从 `Authorization: Bearer`
-中提取令牌，其次从自定义头 `{token_name}` 读取。
+注意：不建议通过查询参数或请求体传递令牌，以避免在日志、Referer 等渠道泄露。SaToken 会优先从自定义头 `{token_name}`
+中提取令牌，其次从 `Authorization: Bearer` 读取。
 
 ## 异常处理
 
