@@ -283,6 +283,29 @@ class SaToken implements SatokenInterface
     }
 
     /**
+     * 计算 token 列表中所有 token 的最小剩余有效秒数
+     * 用于设置 loginIdKey 的 TTL，确保 loginIdKey 不会晚于任何 tokenKey 过期
+     *
+     * @param array<int, string> $tokenList 有效的 token 列表
+     * @param int $fallback 当无法从 tokenInfo 中获取 expire_time 时的回退值
+     * @return int 最小剩余秒数（至少为 1）
+     */
+    private static function getMinRemainingTime(array $tokenList, int $fallback): int
+    {
+        $min = $fallback;
+        foreach ($tokenList as $t) {
+            $info = Cache::get("satoken:token:$t");
+            if (is_array($info) && ! empty($info['expire_time'])) {
+                $remain = (int) $info['expire_time'] - time();
+                if ($remain > 0 && $remain < $min) {
+                    $min = $remain;
+                }
+            }
+        }
+        return max(1, $min);
+    }
+
+    /**
      * 从缓存中移除 token（同时清理 loginId 映射）
      * 统一使用数组存储，不再依赖 is_concurrent 配置分支
      *
@@ -309,7 +332,9 @@ class SaToken implements SatokenInterface
         if (empty($tokenList)) {
             Cache::delete($loginIdKey);
         } else {
-            Cache::set($loginIdKey, $tokenList, $timeout);
+            // 使用列表中 token 的最小剩余时间作为 TTL，避免 loginIdKey 晚于 tokenKey 过期
+            $ttl = self::getMinRemainingTime($tokenList, $timeout);
+            Cache::set($loginIdKey, $tokenList, $ttl);
         }
 
         // 删除token信息
@@ -385,7 +410,19 @@ class SaToken implements SatokenInterface
                 if (! in_array($token, $list, true)) {
                     $list[] = $token;
                 }
-                Cache::set($loginIdKey, $list, $timeout);
+
+                // 强制限制登录数量，与 login() 逻辑保持一致：超过 max_login_count 则踢出最早 token
+                $maxCount = self::resolveMaxLoginCount($config);
+                while (count($list) > $maxCount) {
+                    $oldestToken = array_shift($list);
+                    if (is_string($oldestToken)) {
+                        Cache::delete("satoken:token:$oldestToken");
+                    }
+                }
+
+                // 使用列表中 token 的最小剩余时间作为 TTL
+                $ttl = self::getMinRemainingTime($list, $timeout);
+                Cache::set($loginIdKey, $list, $ttl);
             }
         }
 
