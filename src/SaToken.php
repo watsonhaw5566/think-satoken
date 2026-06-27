@@ -126,8 +126,9 @@ class SaToken implements SatokenInterface
             }
         }
 
-        // 存储 token 列表（统一用数组）
-        Cache::set($loginIdKey, $tokenList, $timeout);
+        // 存储 token 列表（统一用数组）：使用列表中 token 的最小剩余时间作为 TTL
+        $ttl = self::getMinRemainingTime($tokenList, $timeout);
+        Cache::set($loginIdKey, $tokenList, $ttl);
 
         // 存储token信息，包含loginId与自定义内容
         $tokenInfo = [
@@ -385,11 +386,11 @@ class SaToken implements SatokenInterface
 
         // 先保证 loginIdKey 映射存在（统一用数组存储，无论并发模式还是非并发模式）
         $loginIdKey = null;
+        $needsRebuild = false;
         if (isset($tokenInfo['loginId']) && is_int($tokenInfo['loginId'])) {
             $loginIdKey = 'satoken:loginId:'.$tokenInfo['loginId'];
             $mapping = Cache::get($loginIdKey);
 
-            $needsRebuild = false;
             if (is_array($mapping)) {
                 $needsRebuild = ! in_array($token, $mapping, true);
             } elseif (is_string($mapping) && $mapping !== '') {
@@ -448,11 +449,15 @@ class SaToken implements SatokenInterface
             Cache::set($tokenKey, $tokenInfo, $timeout);
         }
 
-        // 同步刷新 loginIdKey 的 TTL
-        if ($loginIdKey !== null && $needsRenew) {
+        // 同步刷新 loginIdKey 的 TTL：needsRebuild=true 时重建路径已写入，不再重复；否则用列表中 token 的最小剩余时间
+        if ($loginIdKey !== null && $needsRenew && !$needsRebuild) {
             $mapping = Cache::get($loginIdKey);
-            if ($mapping !== null) {
-                Cache::set($loginIdKey, $mapping, $timeout);
+            if (is_array($mapping)) {
+                $ttl = self::getMinRemainingTime($mapping, $timeout);
+                Cache::set($loginIdKey, $mapping, $ttl);
+            } elseif (is_string($mapping) && $mapping !== '') {
+                $ttl = self::getMinRemainingTime([$mapping], $timeout);
+                Cache::set($loginIdKey, $mapping, $ttl);
             }
         }
     }
