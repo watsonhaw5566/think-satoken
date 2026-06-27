@@ -58,6 +58,15 @@ class ThinkTestCase extends BaseTestCase
                     ],
                 ],
             ],
+            // 初始化 satoken 配置
+            'satoken' => [
+                'token_name' => 'satoken',
+                'timeout' => 7200,
+                'is_concurrent' => true,
+                'max_login_count' => 10,
+                'auto_renew' => true,
+                'renew_threshold' => 0.3,
+            ],
         ]);
 
         $this->app->instance('config', $config);
