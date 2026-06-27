@@ -4,9 +4,9 @@ namespace satoken\tests;
 
 use PHPUnit\Framework\TestCase as BaseTestCase;
 use think\App;
-use think\Config;
 use think\Container;
 use think\facade\Cache;
+use think\facade\Config;
 
 /**
  * ThinkPHP测试用例基类
@@ -40,10 +40,8 @@ class ThinkTestCase extends BaseTestCase
         // 设置容器实例
         Container::setInstance($this->app);
 
-        // 配置测试环境
-        // 使用正确的方式获取配置实例
-        $config = $this->app->make(Config::class);
-        $config->set([
+        // 配置测试环境：使用 Facade 统一设置
+        Config::set([
             'app_debug' => true,
             'app_trace' => false,
             // 配置缓存驱动，使用file缓存用于测试
@@ -68,8 +66,6 @@ class ThinkTestCase extends BaseTestCase
                 'renew_threshold' => 0.3,
             ],
         ]);
-
-        $this->app->instance('config', $config);
     }
 
     /**
