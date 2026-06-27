@@ -77,6 +77,12 @@ $loginId = SaToken::getCurrentLoginId($token);
 
 // 用户登出
 SaToken::logout($token);
+
+// 按 token 踢出单个会话（仅使指定 token 失效，不影响同一用户的其他登录）
+SaToken::kickoutByToken($token);
+
+// 按 loginId 踢出该用户的所有登录会话（一次调用，所有设备同时下线）
+SaToken::kickout(1001); // 1001 为用户ID
 ```
 
 ### 2. 使用中间件
@@ -223,12 +229,31 @@ var_dump(SaToken::validateTokenFormat('not-a-uuid')); // false
 
 > 典型用途：在权限拦截器或中间件中调用，无需关心 loginId，仅作为登录状态校验
 
-#### `kickout(?string $token = null): bool`
+#### `kickout(int $id): bool`
 
-强制踢出用户，使其登录失效。
+强制踢出指定用户的 **所有** 登录会话（一次调用，该用户的所有 token 同时失效）。
 
-- `$token`: 用户 Token，为空时从请求中获取
-- 返回值：是否踢出成功
+- `$id`: 用户登录 ID
+- 返回值：是否踢出成功（至少有一个 token 被移除时返回 `true`；用户不存在或未登录时返回 `false`）
+- 典型场景：管理员强制某用户下线、修改密码后清空旧会话
+
+```php
+// 踢出用户 1001 的所有设备
+SaToken::kickout(1001);
+```
+
+#### `kickoutByToken(string $token): bool`
+
+强制踢出 **单个** token 对应的登录会话，不影响同一用户的其他 token。
+
+- `$token`: 用户 Token
+- 返回值：是否踢出成功（token 无效、不存在或已过期时返回 `false`）
+- 与 `logout()` 的区别：`logout` 是用户主动操作；`kickoutByToken` 是管理员/强制踢出语义
+
+```php
+// 仅踢出某个 token 对应的会话
+SaToken::kickoutByToken($token);
+```
 
 #### `getTokenExpireTime(?string $token = null): int`
 

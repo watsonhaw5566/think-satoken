@@ -643,12 +643,45 @@ class SaToken implements SatokenInterface
     }
 
     /**
-     * 强制踢出指定token用户
+     * 强制踢出指定用户的所有 token（根据 loginId 踢出）
      *
-     * @param string|null $token 用户token
+     * @param int $id 用户登录ID
+     * @return bool 是否踢出成功（至少有一个 token 被移除）
+     */
+    public static function kickout(int $id): bool
+    {
+        $loginIdKey = "satoken:loginId:$id";
+
+        $raw = Cache::get($loginIdKey);
+        if (is_array($raw)) {
+            $tokenList = $raw;
+        } elseif (is_string($raw) && $raw !== '') {
+            $tokenList = [$raw];
+        } else {
+            $tokenList = [];
+        }
+
+        $removedCount = 0;
+        foreach ($tokenList as $t) {
+            if (! is_string($t) || $t === '') {
+                continue;
+            }
+            Cache::delete("satoken:token:$t");
+            $removedCount++;
+        }
+
+        Cache::delete($loginIdKey);
+
+        return $removedCount > 0;
+    }
+
+    /**
+     * 强制踢出指定 token
+     *
+     * @param string $token 用户token
      * @return bool 是否踢出成功
      */
-    public static function kickout(?string $token = null): bool
+    public static function kickoutByToken(string $token): bool
     {
         $token = self::resolveToken($token);
         if ($token === null) {
