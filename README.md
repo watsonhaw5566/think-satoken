@@ -2,7 +2,7 @@
 
 ## 项目介绍
 
-think-satoken 是一个基于 PHP 实现的 SaToken 权限认证框架，专为 ThinkPHP(6|8) 框架设计。实现了 Java SaToken
+think-satoken 是一个基于 PHP 实现的 SaToken 权限认证框架，专为 ThinkPHP 8 框架设计。实现了 Java SaToken
 的核心功能，提供简洁易用的权限认证解决方案。
 
 ## 功能特性
