@@ -5,12 +5,6 @@
 think-satoken 是一个基于 PHP 实现的 SaToken 权限认证框架，专为 ThinkPHP(6|8) 框架设计。实现了 Java SaToken
 的核心功能，提供简洁易用的权限认证解决方案。
 
-采用 **Facade（门面）** + **Interface（接口）** + **Container（容器）** 三层架构：
-
-- **Facade**：`satoken\facade\SaToken` 提供静态风格调用，契合 ThinkPHP 使用习惯（与框架内部 `Cache::get()`、`Config::get()` 等门面完全一致）
-- **Interface**：`satoken\SatokenInterface` 定义方法契约，便于替换实现或在测试中 Mock
-- **Container**：通过 `satoken\Service` 在 `composer.json` 的 `extra.think.services` 中声明，ThinkPHP 应用初始化时自动完成接口到实现的绑定，Facade 无需手动注册即可使用
-
 ## 功能特性
 
 - 🔐 **用户认证**：提供完整的登录、登出、踢出功能
