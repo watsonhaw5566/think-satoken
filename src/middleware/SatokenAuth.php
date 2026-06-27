@@ -6,7 +6,7 @@ use Closure;
 use satoken\exception\NotLoginException;
 use satoken\exception\SatokenException;
 use satoken\exception\TokenInvalidException;
-use satoken\SaToken;
+use satoken\facade\SaToken;
 
 class SatokenAuth
 {

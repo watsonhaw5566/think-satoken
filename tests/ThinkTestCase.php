@@ -3,6 +3,8 @@
 namespace satoken\tests;
 
 use PHPUnit\Framework\TestCase as BaseTestCase;
+use satoken\SaToken;
+use satoken\SatokenInterface;
 use think\App;
 use think\Container;
 use think\facade\Cache;
@@ -39,6 +41,9 @@ class ThinkTestCase extends BaseTestCase
 
         // 设置容器实例
         Container::setInstance($this->app);
+
+        // 绑定 SaToken 接口到实现，供 Facade 使用
+        $this->app->bind(SatokenInterface::class, SaToken::class);
 
         // 配置测试环境：使用 Facade 统一设置
         Config::set([

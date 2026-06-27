@@ -4,7 +4,7 @@ namespace satoken\tests;
 
 use satoken\exception\NotLoginException;
 use satoken\exception\TokenInvalidException;
-use satoken\SaToken;
+use satoken\facade\SaToken;
 use think\facade\Cache;
 
 /**

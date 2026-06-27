@@ -86,7 +86,7 @@ return [
 可通过公开方法检测当前驱动类型：
 
 ```php
-use satoken\SaToken;
+use satoken\facade\SaToken;
 
 // 当前是否使用 Redis 驱动
 $isRedis = SaToken::isRedisDriver();
@@ -100,7 +100,7 @@ SaToken::resetDriverDetection();
 ### 1. 登录认证
 
 ```php
-use satoken\SaToken;
+use satoken\facade\SaToken;
 
 // 用户登录，返回生成的token
 $token = SaToken::login(1001); // 1001 为用户ID
@@ -192,7 +192,7 @@ think-satoken 定义了以下异常类：
 你可以在代码中捕获并处理这些异常：
 
 ```php
-use satoken\SaToken;
+use satoken\facade\SaToken;
 use satoken\exception\NotLoginException;
 use satoken\exception\TokenInvalidException;
 
@@ -220,6 +220,8 @@ try {
 验证 token 是否为严格的 `UUID v4` 格式（长度 36，版本号=4，变体位=8/9/a/b）。
 
 ```php
+use satoken\facade\SaToken;
+
 var_dump(SaToken::validateTokenFormat('not-a-uuid')); // false
 ```
 
@@ -278,6 +280,8 @@ var_dump(SaToken::validateTokenFormat('not-a-uuid')); // false
 - 典型场景：管理员强制某用户下线、修改密码后清空旧会话
 
 ```php
+use satoken\facade\SaToken;
+
 // 踢出用户 1001 的所有设备
 SaToken::kickout(1001);
 ```
@@ -291,6 +295,8 @@ SaToken::kickout(1001);
 - 与 `logout()` 的区别：`logout` 是用户主动操作；`kickoutByToken` 是管理员/强制踢出语义
 
 ```php
+use satoken\facade\SaToken;
+
 // 仅踢出某个 token 对应的会话
 SaToken::kickoutByToken($token);
 ```
