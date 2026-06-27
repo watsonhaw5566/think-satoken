@@ -17,6 +17,28 @@ think-satoken 是一个基于 PHP 实现的 SaToken 权限认证框架，专为 
 - ⏱️ **有效期查询**：提供过期时间戳与剩余有效秒数查询
 - 🔍 **Token 格式验证**：内置严格 `UUID v4` 格式验证，提高安全性
 - 📦 **自定义附加信息**：登录时可附加自定义 `extra` 数据，并在会话中读取或更新
+- 🔒 **Redis 原子并发保护**：自动检测缓存驱动，当使用 Redis 时启用分布式锁（SET NX EX），保障高并发下 token 列表读写的原子性
+
+## 工作原理
+
+think-satoken 通过在 ThinkPHP 缓存系统之上构建 token → loginId 的双向映射关系实现会话管理。当缓存驱动为 Redis 时，会在以下关键路径上使用分布式锁保障数据一致性：
+
+| 操作 | 锁标识 | 说明 |
+|------|--------|------|
+| 登录 | `satoken:lock:login:{loginId}` | 保障同一用户并发登录时 `max_login_count` 限制正确生效 |
+| 登出/踢出 | `satoken:lock:login:{loginId}` | 保障 token 列表移除操作不会因并发而丢失数据 |
+| 滑动续期 | `satoken:lock:login:{loginId}` | 保障 loginIdKey 重建与 TTL 刷新的原子性 |
+| setExtra | `satoken:lock:token:{token}` | 防止多个请求同时修改同一 token 的 extra 字段相互覆盖 |
+
+锁使用 Redis 原生的 `SET key value NX EX ttl` 命令实现，这是 Redis 官方推荐的分布式锁模式：
+
+- **NX（Not Exists）**：仅当 key 不存在时才设置，保证只有一个请求能获得锁
+- **EX（Expire）**：同时设置过期时间，即使释放锁代码未执行也能自动解锁
+- **循环等待**：在最大等待时间内轮询获取锁（默认 100–500 ms）
+- **按用户粒度**：不同用户的操作完全并行，互不阻塞
+- **finally 释放**：无论正常返回还是抛异常，锁都会释放，避免死锁
+
+非 Redis 驱动（如 File、Memcache）下不启用分布式锁，因为单机缓存本身天然有序。
 
 ## 安装
 
@@ -54,6 +76,24 @@ return [
 - `is_concurrent=false` 等价于 `max_login_count=1`：后一次登录会替换前一次
 - 超过 `max_login_count` 时，最早的 token 被踢出（自动过期删除）
 - 登录时会自动清理列表中已过期的 token，不占用配额
+
+**并发安全（Redis 模式）**：
+
+- think-satoken 会**自动检测**当前缓存驱动是否为 Redis（`think\cache\driver\Redis`）
+- 当检测到 Redis 驱动时，对所有涉及 token 列表读-改-写的操作启用**分布式锁**
+- 非 Redis 驱动（如 File、Memcache）保持原有行为（适用于单机低并发场景）
+
+可通过公开方法检测当前驱动类型：
+
+```php
+use satoken\SaToken;
+
+// 当前是否使用 Redis 驱动
+$isRedis = SaToken::isRedisDriver();
+
+// 重置内部驱动缓存（用于驱动动态切换场景）
+SaToken::resetDriverDetection();
+```
 
 ## 使用示例
 
@@ -289,6 +329,21 @@ SaToken::kickoutByToken($token);
 - `$extra`: 新的自定义内容（数组）
 - 若 token 已过期、格式无效或不存在，返回 `false`
 - 更新成功返回 `true`，并**保持原剩余有效期不变**（不会因更新 `extra` 而刷新 TTL）
+- Redis 模式下按 token 粒度加锁，防止并发更新相互覆盖
+
+#### `isRedisDriver(): bool`
+
+检测当前缓存驱动是否为 Redis。
+
+- 返回 `true`：当前驱动为 `think\cache\driver\Redis` 或类名包含 redis
+- 返回 `false`：其他缓存驱动（File、Memcache 等）或检测失败
+
+#### `resetDriverDetection(): void`
+
+重置内部驱动检测缓存。
+
+- 主要用于测试或运行时动态切换缓存驱动的场景
+- 清空 `isRedisDriver()` 内部缓存的判定结果，使下一次调用会重新检测当前驱动
 
 ## 注意事项
 
@@ -299,6 +354,10 @@ SaToken::kickoutByToken($token);
 3. 系统会自动验证 Token 的格式是否为严格 `UUID v4`，不符合格式的 Token 会被立即拒绝。
 
 4. 如果你的应用有特殊的认证需求，可以通过修改配置文件或扩展核心类来实现。
+
+5. **高并发生产环境推荐使用 Redis 缓存**：只有当缓存驱动为 Redis 时，分布式锁才会生效，保障 `max_login_count` 限制和 token 列表维护在高并发下的正确性。如果使用 File 或其他本地缓存驱动，在多实例部署或极高并发场景下可能存在竞态条件。
+
+6. **Redis 连接配置建议**：内部锁的超时时间（3–5 秒）已覆盖正常登录、登出操作的执行时长。在网络抖动或 Redis 本身有明显延迟的环境中，请确保 Redis 连接配置（`timeout`、`persistent` 等）合理。
 
 ## 开发和测试
 
