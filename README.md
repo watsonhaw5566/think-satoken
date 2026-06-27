@@ -5,6 +5,12 @@
 think-satoken 是一个基于 PHP 实现的 SaToken 权限认证框架，专为 ThinkPHP(6|8) 框架设计。实现了 Java SaToken
 的核心功能，提供简洁易用的权限认证解决方案。
 
+采用 **Facade（门面）** + **Interface（接口）** + **Container（容器）** 三层架构：
+
+- **Facade**：`satoken\facade\SaToken` 提供静态风格调用，契合 ThinkPHP 使用习惯（与框架内部 `Cache::get()`、`Config::get()` 等门面完全一致）
+- **Interface**：`satoken\SatokenInterface` 定义方法契约，便于替换实现或在测试中 Mock
+- **Container**：通过 `satoken\Service` 在 `composer.json` 的 `extra.think.services` 中声明，ThinkPHP 应用初始化时自动完成接口到实现的绑定，Facade 无需手动注册即可使用
+
 ## 功能特性
 
 - 🔐 **用户认证**：提供完整的登录、登出、踢出功能
@@ -86,7 +92,7 @@ return [
 可通过公开方法检测当前驱动类型：
 
 ```php
-use satoken\SaToken;
+use satoken\facade\SaToken;
 
 // 当前是否使用 Redis 驱动
 $isRedis = SaToken::isRedisDriver();
@@ -100,7 +106,7 @@ SaToken::resetDriverDetection();
 ### 1. 登录认证
 
 ```php
-use satoken\SaToken;
+use satoken\facade\SaToken;
 
 // 用户登录，返回生成的token
 $token = SaToken::login(1001); // 1001 为用户ID
@@ -192,7 +198,7 @@ think-satoken 定义了以下异常类：
 你可以在代码中捕获并处理这些异常：
 
 ```php
-use satoken\SaToken;
+use satoken\facade\SaToken;
 use satoken\exception\NotLoginException;
 use satoken\exception\TokenInvalidException;
 
@@ -220,6 +226,8 @@ try {
 验证 token 是否为严格的 `UUID v4` 格式（长度 36，版本号=4，变体位=8/9/a/b）。
 
 ```php
+use satoken\facade\SaToken;
+
 var_dump(SaToken::validateTokenFormat('not-a-uuid')); // false
 ```
 
@@ -278,6 +286,8 @@ var_dump(SaToken::validateTokenFormat('not-a-uuid')); // false
 - 典型场景：管理员强制某用户下线、修改密码后清空旧会话
 
 ```php
+use satoken\facade\SaToken;
+
 // 踢出用户 1001 的所有设备
 SaToken::kickout(1001);
 ```
@@ -291,6 +301,8 @@ SaToken::kickout(1001);
 - 与 `logout()` 的区别：`logout` 是用户主动操作；`kickoutByToken` 是管理员/强制踢出语义
 
 ```php
+use satoken\facade\SaToken;
+
 // 仅踢出某个 token 对应的会话
 SaToken::kickoutByToken($token);
 ```

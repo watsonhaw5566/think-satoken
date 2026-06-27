@@ -36,6 +36,9 @@
   },
   "extra": {
     "think": {
+      "services": [
+        "satoken\\Service"
+      ],
       "config": {
         "satoken": "src/config/satoken.php"
       }

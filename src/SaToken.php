@@ -13,6 +13,8 @@ use think\facade\Request;
 /**
  * Think-SaToken - 基于 PHP 实现的 SaToken 权限认证框架
  * 实现 Java SaToken 的核心功能
+ *
+ * 推荐通过 {@see \satoken\facade\SaToken} 门面以静态方式调用（契合 ThinkPHP 习惯）。
  */
 class SaToken implements SatokenInterface
 {
@@ -21,7 +23,7 @@ class SaToken implements SatokenInterface
      *
      * @var array<string, mixed>
      */
-    protected static $config = [
+    protected $config = [
         'token_name' => '', // 自定义 Token name 名称
         'timeout' => 86400, // Token 有效期，单位秒
         'is_concurrent' => true, // 是否允许同一账号多地登录（false 等价于 max_login_count=1）
@@ -35,7 +37,7 @@ class SaToken implements SatokenInterface
      *
      * @var bool|null
      */
-    protected static $isRedisDriver = null;
+    protected $isRedisDriver = null;
 
     /**
      * 检测当前缓存驱动是否为 Redis
@@ -43,10 +45,10 @@ class SaToken implements SatokenInterface
      *
      * @return bool
      */
-    public static function isRedisDriver(): bool
+    public function isRedisDriver(): bool
     {
-        if (self::$isRedisDriver !== null) {
-            return self::$isRedisDriver;
+        if ($this->isRedisDriver !== null) {
+            return $this->isRedisDriver;
         }
 
         try {
@@ -59,12 +61,12 @@ class SaToken implements SatokenInterface
                 $isRedis = stripos($className, 'redis') !== false;
             }
 
-            self::$isRedisDriver = $isRedis;
+            $this->isRedisDriver = $isRedis;
 
             return $isRedis;
         } catch (\Throwable $e) {
             // 若获取驱动失败（例如容器未初始化），视为非 Redis 模式
-            self::$isRedisDriver = false;
+            $this->isRedisDriver = false;
 
             return false;
         }
@@ -73,9 +75,9 @@ class SaToken implements SatokenInterface
     /**
      * 重置驱动检测状态（主要用于测试或驱动切换场景）
      */
-    public static function resetDriverDetection(): void
+    public function resetDriverDetection(): void
     {
-        self::$isRedisDriver = null;
+        $this->isRedisDriver = null;
     }
 
     /**
@@ -83,9 +85,9 @@ class SaToken implements SatokenInterface
      *
      * @return object|null 返回 Redis 实例或 Predis 客户端，非 Redis 驱动时返回 null
      */
-    protected static function getRedisHandler()
+    protected function getRedisHandler()
     {
-        if (!self::isRedisDriver()) {
+        if (!$this->isRedisDriver()) {
             return null;
         }
 
@@ -109,13 +111,13 @@ class SaToken implements SatokenInterface
      * @param int    $waitMs  最大等待时间（毫秒），默认 200ms；超过则获取失败
      * @return bool 是否成功获取锁；非 Redis 驱动始终返回 true
      */
-    protected static function acquireLock(string $lockKey, int $ttl = 5, int $waitMs = 200): bool
+    protected function acquireLock(string $lockKey, int $ttl = 5, int $waitMs = 200): bool
     {
-        if (!self::isRedisDriver()) {
+        if (!$this->isRedisDriver()) {
             return true;
         }
 
-        $redis = self::getRedisHandler();
+        $redis = $this->getRedisHandler();
         if ($redis === null) {
             return true;
         }
@@ -154,13 +156,13 @@ class SaToken implements SatokenInterface
      *
      * @param string $lockKey 锁的标识，需与 acquireLock 调用时一致
      */
-    protected static function releaseLock(string $lockKey): void
+    protected function releaseLock(string $lockKey): void
     {
-        if (!self::isRedisDriver()) {
+        if (!$this->isRedisDriver()) {
             return;
         }
 
-        $redis = self::getRedisHandler();
+        $redis = $this->getRedisHandler();
         if ($redis === null) {
             return;
         }
@@ -179,7 +181,7 @@ class SaToken implements SatokenInterface
      *
      * @param array<string, mixed> $config
      */
-    private static function resolveMaxLoginCount(array $config): int
+    private function resolveMaxLoginCount(array $config): int
     {
         if (empty($config['is_concurrent'])) {
             return 1;
@@ -196,7 +198,7 @@ class SaToken implements SatokenInterface
      * @param array<int, mixed> $tokenList
      * @return array<int, string> 清理后的有效 token 列表
      */
-    private static function cleanTokenList(array $tokenList): array
+    private function cleanTokenList(array $tokenList): array
     {
         $cleaned = [];
         foreach ($tokenList as $t) {
@@ -218,7 +220,7 @@ class SaToken implements SatokenInterface
      * @param string $token
      * @return array<int, string>
      */
-    private static function removeTokenFromList(array $tokenList, string $token): array
+    private function removeTokenFromList(array $tokenList, string $token): array
     {
         $result = [];
         foreach ($tokenList as $t) {
@@ -240,30 +242,30 @@ class SaToken implements SatokenInterface
      * @param array<string, mixed> $extra 额外自定义内容
      * @return string 生成的token
      */
-    public static function login(int $loginId, array $extra = []): string
+    public function login(int $loginId, array $extra = []): string
     {
-        $config = self::getConfig();
+        $config = $this->getConfig();
         $timeout = (int) $config['timeout'];
-        $maxCount = self::resolveMaxLoginCount($config);
+        $maxCount = $this->resolveMaxLoginCount($config);
 
         // 创建token
-        $token = self::createToken();
+        $token = $this->createToken();
 
         $tokenKey = "satoken:token:$token";
         $loginIdKey = "satoken:loginId:$loginId";
         $lockKey = 'login:'.$loginId;
 
         // Redis 模式下加锁，防止并发登录时的竞态条件
-        $locked = self::acquireLock($lockKey, 5, 500);
+        $locked = $this->acquireLock($lockKey, 5, 500);
 
         try {
             // 读取并清理 token 列表（统一用数组存储）
             $raw = Cache::get($loginIdKey);
             if (is_array($raw)) {
-                $tokenList = self::cleanTokenList($raw);
+                $tokenList = $this->cleanTokenList($raw);
             } elseif (is_string($raw) && $raw !== '') {
                 // 兼容历史非并发模式下的字符串映射
-                $tokenList = self::cleanTokenList([$raw]);
+                $tokenList = $this->cleanTokenList([$raw]);
             } else {
                 $tokenList = [];
             }
@@ -279,7 +281,7 @@ class SaToken implements SatokenInterface
             }
 
             // 存储 token 列表（统一用数组）：使用列表中 token 的最小剩余时间作为 TTL
-            $ttl = self::getMinRemainingTime($tokenList, $timeout);
+            $ttl = $this->getMinRemainingTime($tokenList, $timeout);
             Cache::set($loginIdKey, $tokenList, $ttl);
 
             // 存储token信息，包含loginId与自定义内容
@@ -292,15 +294,15 @@ class SaToken implements SatokenInterface
 
             Cache::set($tokenKey, $tokenInfo, $timeout);
         } finally {
-            if ($locked && self::isRedisDriver()) {
-                self::releaseLock($lockKey);
+            if ($locked && $this->isRedisDriver()) {
+                $this->releaseLock($lockKey);
             }
         }
 
         return $token;
     }
 
-    public static function createToken(): string
+    public function createToken(): string
     {
         return Uuid::uuid4()->toString();
     }
@@ -308,7 +310,7 @@ class SaToken implements SatokenInterface
     /**
      * @return array<string, mixed>
      */
-    private static function getConfig(): array
+    private function getConfig(): array
     {
         $satokenConfig = Config::get('satoken');
         if (! is_array($satokenConfig)) {
@@ -316,7 +318,7 @@ class SaToken implements SatokenInterface
         }
 
         $merged = [];
-        foreach (array_merge(self::$config, $satokenConfig) as $key => $value) {
+        foreach (array_merge($this->config, $satokenConfig) as $key => $value) {
             $merged[(string) $key] = $value;
         }
 
@@ -329,10 +331,10 @@ class SaToken implements SatokenInterface
      * @param  string|null  $token
      * @return string|null 解析后的 token，无法获取时返回 null
      */
-    private static function resolveToken(?string $token): ?string
+    private function resolveToken(?string $token): ?string
     {
         if (empty($token)) {
-            $token = self::getToken();
+            $token = $this->getToken();
         }
 
         return empty($token) ? null : $token;
@@ -344,9 +346,9 @@ class SaToken implements SatokenInterface
      * @param  string  $token  已解析的 token
      * @return array<string, mixed>|null 格式有效且缓存存在时返回 tokenInfo，否则返回 null
      */
-    private static function fetchTokenInfo(string $token): ?array
+    private function fetchTokenInfo(string $token): ?array
     {
-        if (! self::validateTokenFormat($token)) {
+        if (! $this->validateTokenFormat($token)) {
             return null;
         }
 
@@ -362,7 +364,7 @@ class SaToken implements SatokenInterface
      * @param  array<string, mixed>  $tokenInfo
      * @return int|null 有效时返回 loginId，无效时返回 null
      */
-    private static function extractLoginId(array $tokenInfo): ?int
+    private function extractLoginId(array $tokenInfo): ?int
     {
         if (! isset($tokenInfo['loginId']) || ! is_int($tokenInfo['loginId'])) {
             return null;
@@ -381,9 +383,9 @@ class SaToken implements SatokenInterface
      *
      * @throws TokenInvalidException 格式无效或缓存中不存在
      */
-    private static function getValidTokenInfo(string $token): array
+    private function getValidTokenInfo(string $token): array
     {
-        if (! self::validateTokenFormat($token)) {
+        if (! $this->validateTokenFormat($token)) {
             throw new TokenInvalidException('无效的token格式');
         }
 
@@ -404,9 +406,9 @@ class SaToken implements SatokenInterface
      *
      * @throws TokenInvalidException
      */
-    private static function extractLoginIdOrThrow(array $tokenInfo): int
+    private function extractLoginIdOrThrow(array $tokenInfo): int
     {
-        $loginId = self::extractLoginId($tokenInfo);
+        $loginId = $this->extractLoginId($tokenInfo);
         if ($loginId === null) {
             throw new TokenInvalidException('token信息不完整');
         }
@@ -420,24 +422,24 @@ class SaToken implements SatokenInterface
      * @param string|null $token 用户token
      * @return bool 是否登出成功
      */
-    public static function logout(?string $token = null): bool
+    public function logout(?string $token = null): bool
     {
-        $token = self::resolveToken($token);
+        $token = $this->resolveToken($token);
         if ($token === null) {
             return false;
         }
 
-        $tokenInfo = self::fetchTokenInfo($token);
+        $tokenInfo = $this->fetchTokenInfo($token);
         if ($tokenInfo === null) {
             return false;
         }
 
-        $loginId = self::extractLoginId($tokenInfo);
+        $loginId = $this->extractLoginId($tokenInfo);
         if ($loginId === null) {
             return false;
         }
 
-        return self::removeToken($token, $loginId);
+        return $this->removeToken($token, $loginId);
     }
 
     /**
@@ -448,7 +450,7 @@ class SaToken implements SatokenInterface
      * @param int $fallback 当无法从 tokenInfo 中获取 expire_time 时的回退值
      * @return int 最小剩余秒数（至少为 1）
      */
-    private static function getMinRemainingTime(array $tokenList, int $fallback): int
+    private function getMinRemainingTime(array $tokenList, int $fallback): int
     {
         $min = $fallback;
         foreach ($tokenList as $t) {
@@ -472,21 +474,21 @@ class SaToken implements SatokenInterface
      * @param  int  $loginId  对应的用户ID
      * @return bool 始终返回 true
      */
-    private static function removeToken(string $token, int $loginId): bool
+    private function removeToken(string $token, int $loginId): bool
     {
-        $config = self::getConfig();
+        $config = $this->getConfig();
         $timeout = (int) $config['timeout'];
         $loginIdKey = "satoken:loginId:$loginId";
         $lockKey = 'login:'.$loginId;
 
         // Redis 模式下加锁，防止并发登出/踢出时的竞态条件
-        $locked = self::acquireLock($lockKey, 5, 200);
+        $locked = $this->acquireLock($lockKey, 5, 200);
 
         try {
             // 统一用数组方式处理（兼容历史字符串格式）
             $raw = Cache::get($loginIdKey);
             if (is_array($raw)) {
-                $tokenList = self::removeTokenFromList($raw, $token);
+                $tokenList = $this->removeTokenFromList($raw, $token);
             } elseif (is_string($raw) && $raw !== '') {
                 $tokenList = $raw === $token ? [] : [$raw];
             } else {
@@ -497,24 +499,24 @@ class SaToken implements SatokenInterface
                 Cache::delete($loginIdKey);
             } else {
                 // 使用列表中 token 的最小剩余时间作为 TTL，避免 loginIdKey 晚于 tokenKey 过期
-                $ttl = self::getMinRemainingTime($tokenList, $timeout);
+                $ttl = $this->getMinRemainingTime($tokenList, $timeout);
                 Cache::set($loginIdKey, $tokenList, $ttl);
             }
 
             // 删除token信息
             Cache::delete("satoken:token:$token");
         } finally {
-            if ($locked && self::isRedisDriver()) {
-                self::releaseLock($lockKey);
+            if ($locked && $this->isRedisDriver()) {
+                $this->releaseLock($lockKey);
             }
         }
 
         return true;
     }
 
-    private static function getToken(): ?string
+    private function getToken(): ?string
     {
-        $config = self::getConfig();
+        $config = $this->getConfig();
         if (!empty($config['token_name'])) {
             $headerValue = Request::header((string) $config['token_name']);
             if (is_string($headerValue) && $headerValue !== '') {
@@ -529,7 +531,7 @@ class SaToken implements SatokenInterface
         return null;
     }
 
-    public static function validateTokenFormat(string $token): bool
+    public function validateTokenFormat(string $token): bool
     {
         // 先快速校验长度，避免超长字符串进入正则引擎
         if (strlen($token) !== 36) {
@@ -547,9 +549,9 @@ class SaToken implements SatokenInterface
      * @param string $token 已验证格式的 token
      * @param array<string, mixed> $tokenInfo 当前 token 信息
      */
-    private static function renewIfNeeded(string $token, array $tokenInfo): void
+    private function renewIfNeeded(string $token, array $tokenInfo): void
     {
-        $config = self::getConfig();
+        $config = $this->getConfig();
         $timeout = (int) $config['timeout'];
 
         // 先保证 loginIdKey 映射存在（统一用数组存储，无论并发模式还是非并发模式）
@@ -563,7 +565,7 @@ class SaToken implements SatokenInterface
             $lockKey = 'login:'.$loginId;
 
             // Redis 模式下加锁，防止多个请求同时重建映射时的竞态条件
-            $locked = self::acquireLock($lockKey, 3, 100);
+            $locked = $this->acquireLock($lockKey, 3, 100);
 
             try {
                 $mapping = Cache::get($loginIdKey);
@@ -579,7 +581,7 @@ class SaToken implements SatokenInterface
                 if ($needsRebuild) {
                     // 重建：先清理再把当前 token 加入
                     if (is_array($mapping)) {
-                        $list = self::cleanTokenList($mapping);
+                        $list = $this->cleanTokenList($mapping);
                     } elseif (is_string($mapping) && $mapping !== '') {
                         $list = Cache::has("satoken:token:$mapping") ? [$mapping] : [];
                     } else {
@@ -590,7 +592,7 @@ class SaToken implements SatokenInterface
                     }
 
                     // 强制限制登录数量，与 login() 逻辑保持一致：超过 max_login_count 则踢出最早 token
-                    $maxCount = self::resolveMaxLoginCount($config);
+                    $maxCount = $this->resolveMaxLoginCount($config);
                     while (count($list) > $maxCount) {
                         $oldestToken = array_shift($list);
                         if (is_string($oldestToken)) {
@@ -599,12 +601,12 @@ class SaToken implements SatokenInterface
                     }
 
                     // 使用列表中 token 的最小剩余时间作为 TTL
-                    $ttl = self::getMinRemainingTime($list, $timeout);
+                    $ttl = $this->getMinRemainingTime($list, $timeout);
                     Cache::set($loginIdKey, $list, $ttl);
                 }
             } finally {
-                if ($locked && self::isRedisDriver()) {
-                    self::releaseLock($lockKey);
+                if ($locked && $this->isRedisDriver()) {
+                    $this->releaseLock($lockKey);
                 }
             }
         }
@@ -634,19 +636,19 @@ class SaToken implements SatokenInterface
         // 同步刷新 loginIdKey 的 TTL：needsRebuild=true 时重建路径已写入，不再重复；否则用列表中 token 的最小剩余时间
         if ($loginIdKey !== null && $needsRenew && !$needsRebuild) {
             // 刷新 loginIdKey TTL 时也需要加锁，防止与其他并发写操作冲突
-            $locked2 = self::acquireLock($lockKey, 3, 100);
+            $locked2 = $this->acquireLock($lockKey, 3, 100);
             try {
                 $mapping = Cache::get($loginIdKey);
                 if (is_array($mapping)) {
-                    $ttl = self::getMinRemainingTime($mapping, $timeout);
+                    $ttl = $this->getMinRemainingTime($mapping, $timeout);
                     Cache::set($loginIdKey, $mapping, $ttl);
                 } elseif (is_string($mapping) && $mapping !== '') {
-                    $ttl = self::getMinRemainingTime([$mapping], $timeout);
+                    $ttl = $this->getMinRemainingTime([$mapping], $timeout);
                     Cache::set($loginIdKey, $mapping, $ttl);
                 }
             } finally {
-                if ($locked2 && self::isRedisDriver()) {
-                    self::releaseLock($lockKey);
+                if ($locked2 && $this->isRedisDriver()) {
+                    $this->releaseLock($lockKey);
                 }
             }
         }
@@ -658,24 +660,24 @@ class SaToken implements SatokenInterface
      * @param string|null $token 用户token
      * @return bool 是否已登录
      */
-    public static function isLogin(?string $token = null): bool
+    public function isLogin(?string $token = null): bool
     {
-        $token = self::resolveToken($token);
+        $token = $this->resolveToken($token);
         if ($token === null) {
             return false;
         }
 
-        $tokenInfo = self::fetchTokenInfo($token);
+        $tokenInfo = $this->fetchTokenInfo($token);
         if ($tokenInfo === null) {
             return false;
         }
 
-        if (self::extractLoginId($tokenInfo) === null) {
+        if ($this->extractLoginId($tokenInfo) === null) {
             return false;
         }
 
         // 滑动续期（仅在需要时写缓存）
-        self::renewIfNeeded($token, $tokenInfo);
+        $this->renewIfNeeded($token, $tokenInfo);
 
         return true;
     }
@@ -693,18 +695,18 @@ class SaToken implements SatokenInterface
      * @throws NotLoginException    未提供token
      * @throws TokenInvalidException token无效或已过期
      */
-    public static function checkLogin(?string $token = null): void
+    public function checkLogin(?string $token = null): void
     {
         if (empty($token)) {
-            $token = self::getToken();
+            $token = $this->getToken();
             if (empty($token)) {
                 throw new NotLoginException('未提供token');
             }
         }
 
-        $tokenInfo = self::getValidTokenInfo($token);
-        self::extractLoginIdOrThrow($tokenInfo);
-        self::renewIfNeeded($token, $tokenInfo);
+        $tokenInfo = $this->getValidTokenInfo($token);
+        $this->extractLoginIdOrThrow($tokenInfo);
+        $this->renewIfNeeded($token, $tokenInfo);
     }
 
     /**
@@ -713,18 +715,18 @@ class SaToken implements SatokenInterface
      * @param string|null $token 用户token
      * @return int 登录用户ID
      */
-    public static function getCurrentLoginId(?string $token = null): int
+    public function getCurrentLoginId(?string $token = null): int
     {
         if (empty($token)) {
-            $token = self::getToken();
+            $token = $this->getToken();
             if (empty($token)) {
                 throw new NotLoginException('未提供token');
             }
         }
 
-        $tokenInfo = self::getValidTokenInfo($token);
-        $loginId = self::extractLoginIdOrThrow($tokenInfo);
-        self::renewIfNeeded($token, $tokenInfo);
+        $tokenInfo = $this->getValidTokenInfo($token);
+        $loginId = $this->extractLoginIdOrThrow($tokenInfo);
+        $this->renewIfNeeded($token, $tokenInfo);
 
         return $loginId;
     }
@@ -733,17 +735,17 @@ class SaToken implements SatokenInterface
      * @param string|null $token
      * @return array<string, mixed>
      */
-    public static function getTokenInfo(?string $token = null): array
+    public function getTokenInfo(?string $token = null): array
     {
         if (empty($token)) {
-            $token = self::getToken();
+            $token = $this->getToken();
             if (empty($token)) {
                 throw new NotLoginException('未提供token');
             }
         }
 
-        $tokenInfo = self::getValidTokenInfo($token);
-        self::renewIfNeeded($token, $tokenInfo);
+        $tokenInfo = $this->getValidTokenInfo($token);
+        $this->renewIfNeeded($token, $tokenInfo);
 
         return $tokenInfo;
     }
@@ -752,9 +754,9 @@ class SaToken implements SatokenInterface
      * @param string|null $token
      * @return array<string, mixed>
      */
-    public static function getExtra(?string $token = null): array
+    public function getExtra(?string $token = null): array
     {
-        $info = self::getTokenInfo($token);
+        $info = $this->getTokenInfo($token);
 
         if (! isset($info['extra']) || ! is_array($info['extra'])) {
             return [];
@@ -772,26 +774,26 @@ class SaToken implements SatokenInterface
      * @param string|null $token
      * @param array<string, mixed> $extra
      */
-    public static function setExtra(?string $token = null, array $extra = []): bool
+    public function setExtra(?string $token = null, array $extra = []): bool
     {
-        $token = self::resolveToken($token);
+        $token = $this->resolveToken($token);
         if ($token === null) {
             return false;
         }
 
         // Redis 模式下按 token 粒度加锁，防止并发 setExtra 相互覆盖
         $lockKey = 'token:'.$token;
-        $locked = self::acquireLock($lockKey, 3, 100);
+        $locked = $this->acquireLock($lockKey, 3, 100);
 
         try {
-            $tokenInfo = self::fetchTokenInfo($token);
+            $tokenInfo = $this->fetchTokenInfo($token);
             if ($tokenInfo === null) {
                 return false;
             }
 
             $remain = 0;
             if (! empty($tokenInfo['expire_time'])) {
-                $remain = (int) ((int) $tokenInfo['expire_time'] - time());
+                $remain = (int) $tokenInfo['expire_time'] - time();
             }
             if ($remain <= 0) {
                 return false;
@@ -799,8 +801,8 @@ class SaToken implements SatokenInterface
             $tokenInfo['extra'] = $extra;
             Cache::set("satoken:token:$token", $tokenInfo, $remain);
         } finally {
-            if ($locked && self::isRedisDriver()) {
-                self::releaseLock($lockKey);
+            if ($locked && $this->isRedisDriver()) {
+                $this->releaseLock($lockKey);
             }
         }
 
@@ -813,14 +815,14 @@ class SaToken implements SatokenInterface
      * @param string|null $token 用户token
      * @return int 过期时间戳，为0表示不可用或未找到
      */
-    public static function getTokenExpireTime(?string $token = null): int
+    public function getTokenExpireTime(?string $token = null): int
     {
-        $token = self::resolveToken($token);
+        $token = $this->resolveToken($token);
         if ($token === null) {
             return 0;
         }
 
-        $tokenInfo = self::fetchTokenInfo($token);
+        $tokenInfo = $this->fetchTokenInfo($token);
         if ($tokenInfo === null || empty($tokenInfo['expire_time'])) {
             return 0;
         }
@@ -834,9 +836,9 @@ class SaToken implements SatokenInterface
      * @param string|null $token 用户token
      * @return int 剩余秒数，为0表示已过期或未找到
      */
-    public static function getTokenRemainingTime(?string $token = null): int
+    public function getTokenRemainingTime(?string $token = null): int
     {
-        $expire = self::getTokenExpireTime($token);
+        $expire = $this->getTokenExpireTime($token);
         $remain = $expire - time();
 
         return max($remain, 0);
@@ -848,7 +850,7 @@ class SaToken implements SatokenInterface
      * @param int $id 用户登录ID
      * @return bool 是否踢出成功（至少有一个 token 被移除）
      */
-    public static function kickout(int $id): bool
+    public function kickout(int $id): bool
     {
         $loginIdKey = "satoken:loginId:$id";
 
@@ -881,23 +883,23 @@ class SaToken implements SatokenInterface
      * @param string $token 用户token
      * @return bool 是否踢出成功
      */
-    public static function kickoutByToken(string $token): bool
+    public function kickoutByToken(string $token): bool
     {
-        $token = self::resolveToken($token);
+        $token = $this->resolveToken($token);
         if ($token === null) {
             return false;
         }
 
-        $tokenInfo = self::fetchTokenInfo($token);
+        $tokenInfo = $this->fetchTokenInfo($token);
         if ($tokenInfo === null) {
             return false;
         }
 
-        $loginId = self::extractLoginId($tokenInfo);
+        $loginId = $this->extractLoginId($tokenInfo);
         if ($loginId === null) {
             return false;
         }
 
-        return self::removeToken($token, $loginId);
+        return $this->removeToken($token, $loginId);
     }
 }
