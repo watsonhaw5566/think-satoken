@@ -37,12 +37,20 @@ interface SatokenInterface
     public static function logout(?string $token = null): bool;
 
     /**
-     * 强制踢出指定token用户
+     * 强制踢出指定用户的所有 token（根据 loginId 踢出）
      *
-     * @param  string|null  $token  用户token
+     * @param  int  $id  用户登录ID
+     * @return bool 是否踢出成功（至少有一个 token 被移除）
+     */
+    public static function kickout(int $id): bool;
+
+    /**
+     * 强制踢出指定 token
+     *
+     * @param  string  $token  用户token
      * @return bool 是否踢出成功
      */
-    public static function kickout(?string $token = null): bool;
+    public static function kickoutByToken(string $token): bool;
 
     /**
      * 检查是否已登录

@@ -640,9 +640,54 @@ class SaTokenTests extends ThinkTestCase
     }
 
     /**
-     * 测试强制踢出用户功能
+     * 测试按 loginId 踢出用户所有 token
      */
-    public function test_kickout_removes_token_and_logs_out_user()
+    public function test_kickout_by_id_removes_all_tokens_of_user()
+    {
+        // 用户1登录获取3个token
+        $token1 = SaToken::login(self::TEST_USER_ID);
+        $token2 = SaToken::login(self::TEST_USER_ID);
+        $token3 = SaToken::login(self::TEST_USER_ID);
+
+        // 用户2登录获取token
+        $anotherToken = SaToken::login(self::ANOTHER_USER_ID);
+
+        // 验证所有token都有效
+        $this->assertTrue(SaToken::isLogin($token1));
+        $this->assertTrue(SaToken::isLogin($token2));
+        $this->assertTrue(SaToken::isLogin($token3));
+        $this->assertTrue(SaToken::isLogin($anotherToken));
+
+        // 按 loginId 踢出用户1的所有 token
+        $result = SaToken::kickout(self::TEST_USER_ID);
+        $this->assertTrue($result);
+
+        // 验证用户1的所有token已失效
+        $this->assertFalse(SaToken::isLogin($token1));
+        $this->assertFalse(SaToken::isLogin($token2));
+        $this->assertFalse(SaToken::isLogin($token3));
+
+        // 验证用户2的token仍然有效
+        $this->assertTrue(SaToken::isLogin($anotherToken));
+
+        // 验证 loginIdKey 已被清理
+        $loginIdKey = 'satoken:loginId:'.self::TEST_USER_ID;
+        $this->assertFalse(Cache::has($loginIdKey));
+    }
+
+    /**
+     * 测试按 loginId 踢出不存在的用户应返回 false
+     */
+    public function test_kickout_by_id_returns_false_for_unknown_user()
+    {
+        $result = SaToken::kickout(9999);
+        $this->assertFalse($result);
+    }
+
+    /**
+     * 测试 kickoutByToken：踢出单个 token
+     */
+    public function test_kickout_by_token_removes_token_and_logs_out_user()
     {
         // 先登录获取token
         $token = SaToken::login(self::TEST_USER_ID);
@@ -651,7 +696,7 @@ class SaTokenTests extends ThinkTestCase
         $this->assertTrue(SaToken::isLogin($token));
 
         // 执行强制踢出操作
-        $result = SaToken::kickout($token);
+        $result = SaToken::kickoutByToken($token);
 
         // 验证踢出成功
         $this->assertTrue($result);
@@ -669,24 +714,24 @@ class SaTokenTests extends ThinkTestCase
     }
 
     /**
-     * 测试强制踢出无效token的处理
+     * 测试 kickoutByToken：无效token的处理
      */
-    public function test_kickout_for_invalid_token()
+    public function test_kickout_by_token_for_invalid_token()
     {
         // 使用无效token
         $invalidToken = 'invalid-token-123456';
 
         // 执行强制踢出操作
-        $result = SaToken::kickout($invalidToken);
+        $result = SaToken::kickoutByToken($invalidToken);
 
         // 验证踢出失败
         $this->assertFalse($result);
     }
 
     /**
-     * 测试多个token情况下的强制踢出功能
+     * 测试 kickoutByToken：不会影响其他 token（包括同一用户的其他 token）
      */
-    public function test_kickout_does_not_affect_other_tokens()
+    public function test_kickout_by_token_does_not_affect_other_tokens()
     {
         // 用户1登录获取两个token
         $token1 = SaToken::login(self::TEST_USER_ID);
@@ -701,14 +746,16 @@ class SaTokenTests extends ThinkTestCase
         $this->assertTrue(SaToken::isLogin($anotherToken));
 
         // 强制踢出第一个token
-        $result = SaToken::kickout($token1);
+        $result = SaToken::kickoutByToken($token1);
         $this->assertTrue($result);
 
         // 验证第一个token已失效
         $this->assertFalse(SaToken::isLogin($token1));
 
-        // 验证其他token仍然有效
+        // 验证同一用户的其他token仍然有效
         $this->assertTrue(SaToken::isLogin($token2));
+
+        // 验证其他用户的token仍然有效
         $this->assertTrue(SaToken::isLogin($anotherToken));
     }
 
@@ -992,7 +1039,7 @@ class SaTokenTests extends ThinkTestCase
         $t3 = SaToken::login($loginId);
 
         // 踢出 t2
-        SaToken::kickout($t2);
+        SaToken::kickoutByToken($t2);
         $this->assertFalse(SaToken::isLogin($t2));
 
         $list = Cache::get($loginIdKey);
@@ -1003,14 +1050,14 @@ class SaTokenTests extends ThinkTestCase
         $this->assertNotContains($t2, $list);
 
         // 踢出 t1
-        SaToken::kickout($t1);
+        SaToken::kickoutByToken($t1);
         $list = Cache::get($loginIdKey);
         $this->assertIsArray($list);
         $this->assertCount(1, $list);
         $this->assertSame([$t3], array_values($list));
 
         // 踢出最后一个
-        SaToken::kickout($t3);
+        SaToken::kickoutByToken($t3);
         $this->assertFalse(Cache::has($loginIdKey));
 
         reset_satoken_test_config();
