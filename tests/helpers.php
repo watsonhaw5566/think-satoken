@@ -1,31 +1,21 @@
 <?php
 
-// 在全局命名空间中定义config函数，用于测试环境
-if (! function_exists('config')) {
+use think\facade\Config;
+
+if (! function_exists('get_satoken_default_config')) {
     /**
-     * @param  string|null  $name
-     * @param  mixed  $default
-     * @return mixed
+     * @return array<string, mixed>
      */
-    function config(?string $name = null, $default = null)
+    function get_satoken_default_config(): array
     {
-        if ($name === 'satoken') {
-            global $SATOKEN_TEST_CONFIG;
-            if (! is_array($SATOKEN_TEST_CONFIG)) {
-                $SATOKEN_TEST_CONFIG = [
-                    'token_name' => 'satoken',
-                    'timeout' => 7200,
-                    'is_concurrent' => true,
-                    'max_login_count' => 10,
-                    'auto_renew' => true,
-                    'renew_threshold' => 0.3,
-                ];
-            }
-
-            return $SATOKEN_TEST_CONFIG;
-        }
-
-        return $default;
+        return [
+            'token_name' => 'satoken',
+            'timeout' => 7200,
+            'is_concurrent' => true,
+            'max_login_count' => 10,
+            'auto_renew' => true,
+            'renew_threshold' => 0.3,
+        ];
     }
 }
 
@@ -35,33 +25,17 @@ if (! function_exists('set_satoken_test_config')) {
      */
     function set_satoken_test_config(array $merge): void
     {
-        global $SATOKEN_TEST_CONFIG;
-        if (! is_array($SATOKEN_TEST_CONFIG)) {
-            $SATOKEN_TEST_CONFIG = [];
+        $current = Config::get('satoken');
+        if (! is_array($current)) {
+            $current = [];
         }
-        $defaults = [
-            'token_name' => 'satoken',
-            'timeout' => 7200,
-            'is_concurrent' => true,
-            'max_login_count' => 10,
-            'auto_renew' => true,
-            'renew_threshold' => 0.3,
-        ];
-        $SATOKEN_TEST_CONFIG = array_merge($defaults, $SATOKEN_TEST_CONFIG, $merge);
+        Config::set(array_merge(get_satoken_default_config(), $current, $merge), 'satoken');
     }
 }
 
 if (! function_exists('reset_satoken_test_config')) {
     function reset_satoken_test_config(): void
     {
-        global $SATOKEN_TEST_CONFIG;
-        $SATOKEN_TEST_CONFIG = [
-            'token_name' => 'satoken',
-            'timeout' => 7200,
-            'is_concurrent' => true,
-            'max_login_count' => 10,
-            'auto_renew' => true,
-            'renew_threshold' => 0.3,
-        ];
+        Config::set(get_satoken_default_config(), 'satoken');
     }
 }

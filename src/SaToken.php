@@ -6,6 +6,7 @@ use Ramsey\Uuid\Uuid;
 use satoken\exception\NotLoginException;
 use satoken\exception\TokenInvalidException;
 use think\facade\Cache;
+use think\facade\Config;
 use think\facade\Request;
 
 /**
@@ -153,7 +154,7 @@ class SaToken implements SatokenInterface
      */
     private static function getConfig(): array
     {
-        $satokenConfig = config('satoken');
+        $satokenConfig = Config::get('satoken');
         if (! is_array($satokenConfig)) {
             $satokenConfig = [];
         }
