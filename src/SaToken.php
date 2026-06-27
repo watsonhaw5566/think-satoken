@@ -5,6 +5,7 @@ namespace satoken;
 use Ramsey\Uuid\Uuid;
 use satoken\exception\NotLoginException;
 use satoken\exception\TokenInvalidException;
+use think\cache\driver\Redis as RedisDriver;
 use think\facade\Cache;
 use think\facade\Config;
 use think\facade\Request;
@@ -28,6 +29,149 @@ class SaToken implements SatokenInterface
         'auto_renew' => true, // 是否启用滑动续期
         'renew_threshold' => 0.3, // 滑动续期阈值：剩余时间低于此比例才触发续期 (0~1，默认 30%)
     ];
+
+    /**
+     * 缓存当前驱动是否为 Redis（避免每次检测都反射驱动类）
+     *
+     * @var bool|null
+     */
+    protected static $isRedisDriver = null;
+
+    /**
+     * 检测当前缓存驱动是否为 Redis
+     * 仅当驱动为 think\cache\driver\Redis 时，才启用分布式锁进行原子操作
+     *
+     * @return bool
+     */
+    public static function isRedisDriver(): bool
+    {
+        if (self::$isRedisDriver !== null) {
+            return self::$isRedisDriver;
+        }
+
+        try {
+            $driver = Cache::store();
+            $isRedis = $driver instanceof RedisDriver;
+
+            if (!$isRedis && is_object($driver)) {
+                // 兜底：检查类名中是否包含 redis（兼容可能的自定义驱动）
+                $className = get_class($driver);
+                $isRedis = stripos($className, 'redis') !== false;
+            }
+
+            self::$isRedisDriver = $isRedis;
+
+            return $isRedis;
+        } catch (\Throwable $e) {
+            // 若获取驱动失败（例如容器未初始化），视为非 Redis 模式
+            self::$isRedisDriver = false;
+
+            return false;
+        }
+    }
+
+    /**
+     * 重置驱动检测状态（主要用于测试或驱动切换场景）
+     */
+    public static function resetDriverDetection(): void
+    {
+        self::$isRedisDriver = null;
+    }
+
+    /**
+     * 获取 Redis 原生句柄
+     *
+     * @return object|null 返回 Redis 实例或 Predis 客户端，非 Redis 驱动时返回 null
+     */
+    protected static function getRedisHandler()
+    {
+        if (!self::isRedisDriver()) {
+            return null;
+        }
+
+        try {
+            $driver = Cache::store();
+
+            return $driver->handler();
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }
+
+    /**
+     * 尝试获取分布式锁（仅 Redis 模式下生效，其他驱动返回 true 表示"无需锁"）
+     *
+     * 使用 Redis 的 SET NX EX 原语确保加锁的原子性。设置合理的锁超时时间
+     * 防止死锁。即使调用方忘记释放锁，Redis 也会在超时后自动释放。
+     *
+     * @param string $lockKey 锁的标识（如 'login:1001'）
+     * @param int    $ttl     锁超时时间（秒），默认 5 秒
+     * @param int    $waitMs  最大等待时间（毫秒），默认 200ms；超过则获取失败
+     * @return bool 是否成功获取锁；非 Redis 驱动始终返回 true
+     */
+    protected static function acquireLock(string $lockKey, int $ttl = 5, int $waitMs = 200): bool
+    {
+        if (!self::isRedisDriver()) {
+            return true;
+        }
+
+        $redis = self::getRedisHandler();
+        if ($redis === null) {
+            return true;
+        }
+
+        $cacheKey = 'satoken:lock:'.$lockKey;
+        $startTime = (int) (microtime(true) * 1000);
+
+        while ((int) (microtime(true) * 1000) - $startTime < $waitMs) {
+            // SET NX EX 原子操作：key 不存在时才写入，并同时设置过期时间
+            try {
+                $result = $redis->set($cacheKey, '1', ['nx', 'ex' => $ttl]);
+            } catch (\Throwable $e) {
+                // 某些 Redis 客户端或扩展的参数格式不同，尝试其他写法
+                try {
+                    $result = $redis->setnx($cacheKey, '1');
+                    if ($result) {
+                        $redis->expire($cacheKey, $ttl);
+                    }
+                } catch (\Throwable $e2) {
+                    $result = false;
+                }
+            }
+
+            if ($result) {
+                return true;
+            }
+
+            usleep(10000); // 等待 10ms 再重试
+        }
+
+        return false;
+    }
+
+    /**
+     * 释放分布式锁
+     *
+     * @param string $lockKey 锁的标识，需与 acquireLock 调用时一致
+     */
+    protected static function releaseLock(string $lockKey): void
+    {
+        if (!self::isRedisDriver()) {
+            return;
+        }
+
+        $redis = self::getRedisHandler();
+        if ($redis === null) {
+            return;
+        }
+
+        try {
+            $cacheKey = 'satoken:lock:'.$lockKey;
+            $redis->del($cacheKey);
+        } catch (\Throwable $e) {
+            // 释放锁失败不影响业务逻辑
+        }
+    }
 
     /**
      * 计算实际最大登录数量
@@ -89,6 +233,8 @@ class SaToken implements SatokenInterface
     /**
      * 登录功能
      * 将loginId融入token中，并处理并发登录
+     * 当缓存驱动为 Redis 时，使用分布式锁保护 loginIdKey 的读写操作，
+     * 防止并发登录时出现竞态条件。
      *
      * @param int $loginId 用户登录ID
      * @param array<string, mixed> $extra 额外自定义内容
@@ -105,41 +251,51 @@ class SaToken implements SatokenInterface
 
         $tokenKey = "satoken:token:$token";
         $loginIdKey = "satoken:loginId:$loginId";
+        $lockKey = 'login:'.$loginId;
 
-        // 读取并清理 token 列表（统一用数组存储）
-        $raw = Cache::get($loginIdKey);
-        if (is_array($raw)) {
-            $tokenList = self::cleanTokenList($raw);
-        } elseif (is_string($raw) && $raw !== '') {
-            // 兼容历史非并发模式下的字符串映射
-            $tokenList = self::cleanTokenList([$raw]);
-        } else {
-            $tokenList = [];
-        }
+        // Redis 模式下加锁，防止并发登录时的竞态条件
+        $locked = self::acquireLock($lockKey, 5, 500);
 
-        // 如果超过最大登录数量，从最早的开始踢出（每次都重新写入 loginIdKey
-        $tokenList[] = $token;
+        try {
+            // 读取并清理 token 列表（统一用数组存储）
+            $raw = Cache::get($loginIdKey);
+            if (is_array($raw)) {
+                $tokenList = self::cleanTokenList($raw);
+            } elseif (is_string($raw) && $raw !== '') {
+                // 兼容历史非并发模式下的字符串映射
+                $tokenList = self::cleanTokenList([$raw]);
+            } else {
+                $tokenList = [];
+            }
 
-        while (count($tokenList) > $maxCount) {
-            $oldestToken = array_shift($tokenList);
-            if (is_string($oldestToken)) {
-                Cache::delete("satoken:token:$oldestToken");
+            // 如果超过最大登录数量，从最早的开始踢出
+            $tokenList[] = $token;
+
+            while (count($tokenList) > $maxCount) {
+                $oldestToken = array_shift($tokenList);
+                if (is_string($oldestToken)) {
+                    Cache::delete("satoken:token:$oldestToken");
+                }
+            }
+
+            // 存储 token 列表（统一用数组）：使用列表中 token 的最小剩余时间作为 TTL
+            $ttl = self::getMinRemainingTime($tokenList, $timeout);
+            Cache::set($loginIdKey, $tokenList, $ttl);
+
+            // 存储token信息，包含loginId与自定义内容
+            $tokenInfo = [
+                'loginId' => $loginId,
+                'create_time' => time(),
+                'expire_time' => time() + $timeout,
+                'extra' => $extra,
+            ];
+
+            Cache::set($tokenKey, $tokenInfo, $timeout);
+        } finally {
+            if ($locked && self::isRedisDriver()) {
+                self::releaseLock($lockKey);
             }
         }
-
-        // 存储 token 列表（统一用数组）：使用列表中 token 的最小剩余时间作为 TTL
-        $ttl = self::getMinRemainingTime($tokenList, $timeout);
-        Cache::set($loginIdKey, $tokenList, $ttl);
-
-        // 存储token信息，包含loginId与自定义内容
-        $tokenInfo = [
-            'loginId' => $loginId,
-            'create_time' => time(),
-            'expire_time' => time() + $timeout,
-            'extra' => $extra,
-        ];
-
-        Cache::set($tokenKey, $tokenInfo, $timeout);
 
         return $token;
     }
@@ -310,6 +466,7 @@ class SaToken implements SatokenInterface
     /**
      * 从缓存中移除 token（同时清理 loginId 映射）
      * 统一使用数组存储，不再依赖 is_concurrent 配置分支
+     * 当缓存驱动为 Redis 时，使用分布式锁保护 loginIdKey 的读写操作。
      *
      * @param  string  $token  要移除的 token
      * @param  int  $loginId  对应的用户ID
@@ -320,27 +477,37 @@ class SaToken implements SatokenInterface
         $config = self::getConfig();
         $timeout = (int) $config['timeout'];
         $loginIdKey = "satoken:loginId:$loginId";
+        $lockKey = 'login:'.$loginId;
 
-        // 统一用数组方式处理（兼容历史字符串格式）
-        $raw = Cache::get($loginIdKey);
-        if (is_array($raw)) {
-            $tokenList = self::removeTokenFromList($raw, $token);
-        } elseif (is_string($raw) && $raw !== '') {
-            $tokenList = $raw === $token ? [] : [$raw];
-        } else {
-            $tokenList = [];
+        // Redis 模式下加锁，防止并发登出/踢出时的竞态条件
+        $locked = self::acquireLock($lockKey, 5, 200);
+
+        try {
+            // 统一用数组方式处理（兼容历史字符串格式）
+            $raw = Cache::get($loginIdKey);
+            if (is_array($raw)) {
+                $tokenList = self::removeTokenFromList($raw, $token);
+            } elseif (is_string($raw) && $raw !== '') {
+                $tokenList = $raw === $token ? [] : [$raw];
+            } else {
+                $tokenList = [];
+            }
+
+            if (empty($tokenList)) {
+                Cache::delete($loginIdKey);
+            } else {
+                // 使用列表中 token 的最小剩余时间作为 TTL，避免 loginIdKey 晚于 tokenKey 过期
+                $ttl = self::getMinRemainingTime($tokenList, $timeout);
+                Cache::set($loginIdKey, $tokenList, $ttl);
+            }
+
+            // 删除token信息
+            Cache::delete("satoken:token:$token");
+        } finally {
+            if ($locked && self::isRedisDriver()) {
+                self::releaseLock($lockKey);
+            }
         }
-
-        if (empty($tokenList)) {
-            Cache::delete($loginIdKey);
-        } else {
-            // 使用列表中 token 的最小剩余时间作为 TTL，避免 loginIdKey 晚于 tokenKey 过期
-            $ttl = self::getMinRemainingTime($tokenList, $timeout);
-            Cache::set($loginIdKey, $tokenList, $ttl);
-        }
-
-        // 删除token信息
-        Cache::delete("satoken:token:$token");
 
         return true;
     }
@@ -388,43 +555,57 @@ class SaToken implements SatokenInterface
         // 先保证 loginIdKey 映射存在（统一用数组存储，无论并发模式还是非并发模式）
         $loginIdKey = null;
         $needsRebuild = false;
+        $lockKey = null;
+        $locked = false;
         if (isset($tokenInfo['loginId']) && is_int($tokenInfo['loginId'])) {
-            $loginIdKey = 'satoken:loginId:'.$tokenInfo['loginId'];
-            $mapping = Cache::get($loginIdKey);
+            $loginId = (int) $tokenInfo['loginId'];
+            $loginIdKey = 'satoken:loginId:'.$loginId;
+            $lockKey = 'login:'.$loginId;
 
-            if (is_array($mapping)) {
-                $needsRebuild = ! in_array($token, $mapping, true);
-            } elseif (is_string($mapping) && $mapping !== '') {
-                $needsRebuild = $mapping !== $token;
-            } else {
-                $needsRebuild = true;
-            }
+            // Redis 模式下加锁，防止多个请求同时重建映射时的竞态条件
+            $locked = self::acquireLock($lockKey, 3, 100);
 
-            if ($needsRebuild) {
-                // 重建：先清理再把当前 token 加入
+            try {
+                $mapping = Cache::get($loginIdKey);
+
                 if (is_array($mapping)) {
-                    $list = self::cleanTokenList($mapping);
+                    $needsRebuild = ! in_array($token, $mapping, true);
                 } elseif (is_string($mapping) && $mapping !== '') {
-                    $list = Cache::has("satoken:token:$mapping") ? [$mapping] : [];
+                    $needsRebuild = $mapping !== $token;
                 } else {
-                    $list = [];
-                }
-                if (! in_array($token, $list, true)) {
-                    $list[] = $token;
+                    $needsRebuild = true;
                 }
 
-                // 强制限制登录数量，与 login() 逻辑保持一致：超过 max_login_count 则踢出最早 token
-                $maxCount = self::resolveMaxLoginCount($config);
-                while (count($list) > $maxCount) {
-                    $oldestToken = array_shift($list);
-                    if (is_string($oldestToken)) {
-                        Cache::delete("satoken:token:$oldestToken");
+                if ($needsRebuild) {
+                    // 重建：先清理再把当前 token 加入
+                    if (is_array($mapping)) {
+                        $list = self::cleanTokenList($mapping);
+                    } elseif (is_string($mapping) && $mapping !== '') {
+                        $list = Cache::has("satoken:token:$mapping") ? [$mapping] : [];
+                    } else {
+                        $list = [];
                     }
-                }
+                    if (! in_array($token, $list, true)) {
+                        $list[] = $token;
+                    }
 
-                // 使用列表中 token 的最小剩余时间作为 TTL
-                $ttl = self::getMinRemainingTime($list, $timeout);
-                Cache::set($loginIdKey, $list, $ttl);
+                    // 强制限制登录数量，与 login() 逻辑保持一致：超过 max_login_count 则踢出最早 token
+                    $maxCount = self::resolveMaxLoginCount($config);
+                    while (count($list) > $maxCount) {
+                        $oldestToken = array_shift($list);
+                        if (is_string($oldestToken)) {
+                            Cache::delete("satoken:token:$oldestToken");
+                        }
+                    }
+
+                    // 使用列表中 token 的最小剩余时间作为 TTL
+                    $ttl = self::getMinRemainingTime($list, $timeout);
+                    Cache::set($loginIdKey, $list, $ttl);
+                }
+            } finally {
+                if ($locked && self::isRedisDriver()) {
+                    self::releaseLock($lockKey);
+                }
             }
         }
 
@@ -452,13 +633,21 @@ class SaToken implements SatokenInterface
 
         // 同步刷新 loginIdKey 的 TTL：needsRebuild=true 时重建路径已写入，不再重复；否则用列表中 token 的最小剩余时间
         if ($loginIdKey !== null && $needsRenew && !$needsRebuild) {
-            $mapping = Cache::get($loginIdKey);
-            if (is_array($mapping)) {
-                $ttl = self::getMinRemainingTime($mapping, $timeout);
-                Cache::set($loginIdKey, $mapping, $ttl);
-            } elseif (is_string($mapping) && $mapping !== '') {
-                $ttl = self::getMinRemainingTime([$mapping], $timeout);
-                Cache::set($loginIdKey, $mapping, $ttl);
+            // 刷新 loginIdKey TTL 时也需要加锁，防止与其他并发写操作冲突
+            $locked2 = self::acquireLock($lockKey, 3, 100);
+            try {
+                $mapping = Cache::get($loginIdKey);
+                if (is_array($mapping)) {
+                    $ttl = self::getMinRemainingTime($mapping, $timeout);
+                    Cache::set($loginIdKey, $mapping, $ttl);
+                } elseif (is_string($mapping) && $mapping !== '') {
+                    $ttl = self::getMinRemainingTime([$mapping], $timeout);
+                    Cache::set($loginIdKey, $mapping, $ttl);
+                }
+            } finally {
+                if ($locked2 && self::isRedisDriver()) {
+                    self::releaseLock($lockKey);
+                }
             }
         }
     }
@@ -590,20 +779,30 @@ class SaToken implements SatokenInterface
             return false;
         }
 
-        $tokenInfo = self::fetchTokenInfo($token);
-        if ($tokenInfo === null) {
-            return false;
-        }
+        // Redis 模式下按 token 粒度加锁，防止并发 setExtra 相互覆盖
+        $lockKey = 'token:'.$token;
+        $locked = self::acquireLock($lockKey, 3, 100);
 
-        $remain = 0;
-        if (! empty($tokenInfo['expire_time'])) {
-            $remain = (int) ((int) $tokenInfo['expire_time'] - time());
+        try {
+            $tokenInfo = self::fetchTokenInfo($token);
+            if ($tokenInfo === null) {
+                return false;
+            }
+
+            $remain = 0;
+            if (! empty($tokenInfo['expire_time'])) {
+                $remain = (int) ((int) $tokenInfo['expire_time'] - time());
+            }
+            if ($remain <= 0) {
+                return false;
+            }
+            $tokenInfo['extra'] = $extra;
+            Cache::set("satoken:token:$token", $tokenInfo, $remain);
+        } finally {
+            if ($locked && self::isRedisDriver()) {
+                self::releaseLock($lockKey);
+            }
         }
-        if ($remain <= 0) {
-            return false;
-        }
-        $tokenInfo['extra'] = $extra;
-        Cache::set("satoken:token:$token", $tokenInfo, $remain);
 
         return true;
     }
