@@ -6,15 +6,16 @@ use satoken\exception\NotLoginException;
 use satoken\exception\TokenInvalidException;
 use satoken\facade\SaToken;
 use think\facade\Cache;
+use Throwable;
 
 /**
  * SaToken 单元测试
  */
 class SaTokenTests extends ThinkTestCase
 {
-    const TEST_USER_ID = 1001;
+    public const TEST_USER_ID = 1001;
 
-    const ANOTHER_USER_ID = 1002;
+    public const ANOTHER_USER_ID = 1002;
 
     /**
      * 测试 createToken 方法是否返回非空字符串
@@ -169,7 +170,7 @@ class SaTokenTests extends ThinkTestCase
 
     public function test_validate_token_format_rejects_uuid_with_signature()
     {
-        $uuid = SaToken::createToken();
+        $uuid   = SaToken::createToken();
         $signed = $uuid.'.deadbeef';
         $this->assertTrue(SaToken::validateTokenFormat($uuid));
         $this->assertFalse(SaToken::validateTokenFormat($signed));
@@ -189,7 +190,7 @@ class SaTokenTests extends ThinkTestCase
         $this->assertNotEquals($token2, $token3);
 
         $tokens = [];
-        $count = 100;
+        $count  = 100;
         for ($i = 0; $i < $count; $i++) {
             $tokens[] = SaToken::createToken();
         }
@@ -209,13 +210,13 @@ class SaTokenTests extends ThinkTestCase
         $this->assertNotEmpty($token);
 
         // 验证token已存入缓存
-        $tokenKey = "satoken:token:$token";
+        $tokenKey  = "satoken:token:$token";
         $tokenInfo = Cache::get($tokenKey);
         $this->assertNotEmpty($tokenInfo);
         $this->assertEquals(self::TEST_USER_ID, $tokenInfo['loginId']);
 
         // 验证loginId与token的映射关系已建立（单token，存字符串）
-        $loginIdKey = 'satoken:loginId:'.self::TEST_USER_ID;
+        $loginIdKey  = 'satoken:loginId:'.self::TEST_USER_ID;
         $storedToken = Cache::get($loginIdKey);
         $this->assertSame($token, $storedToken);
     }
@@ -285,8 +286,8 @@ class SaTokenTests extends ThinkTestCase
     public function test_set_extra_updates_content_and_preserves_ttl()
     {
         set_satoken_test_config(['timeout' => 3, 'auto_renew' => false]);
-        $token = SaToken::login(self::TEST_USER_ID, ['k' => 'v']);
-        $infoBefore = SaToken::getTokenInfo($token);
+        $token        = SaToken::login(self::TEST_USER_ID, ['k' => 'v']);
+        $infoBefore   = SaToken::getTokenInfo($token);
         $remainBefore = SaToken::getTokenRemainingTime($token);
 
         sleep(1);
@@ -387,7 +388,7 @@ class SaTokenTests extends ThinkTestCase
         $loginId = SaToken::getCurrentLoginId($token);
         $this->assertEquals(self::TEST_USER_ID, $loginId);
 
-        $anotherToken = SaToken::login(self::ANOTHER_USER_ID);
+        $anotherToken   = SaToken::login(self::ANOTHER_USER_ID);
         $anotherLoginId = SaToken::getCurrentLoginId($anotherToken);
         $this->assertEquals(self::ANOTHER_USER_ID, $anotherLoginId);
     }
@@ -439,9 +440,10 @@ class SaTokenTests extends ThinkTestCase
         $token = SaToken::login(self::TEST_USER_ID);
 
         $exception = null;
+
         try {
             SaToken::checkLogin($token);
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $exception = $e;
         }
 
@@ -473,6 +475,7 @@ class SaTokenTests extends ThinkTestCase
     public function test_check_login_throws_token_invalid_exception_for_bad_format()
     {
         $caught = false;
+
         try {
             SaToken::checkLogin('not-a-valid-token');
         } catch (TokenInvalidException $e) {
@@ -491,6 +494,7 @@ class SaTokenTests extends ThinkTestCase
         $fakeToken = SaToken::createToken();
 
         $caught = false;
+
         try {
             SaToken::checkLogin($fakeToken);
         } catch (TokenInvalidException $e) {
@@ -534,11 +538,12 @@ class SaTokenTests extends ThinkTestCase
      */
     public function test_check_login_throws_token_invalid_exception_for_missing_login_id()
     {
-        $token = SaToken::createToken();
+        $token    = SaToken::createToken();
         $tokenKey = "satoken:token:$token";
         Cache::set($tokenKey, ['extra' => ['role' => 'admin'], 'create_time' => time()], 60);
 
         $caught = false;
+
         try {
             SaToken::checkLogin($token);
         } catch (TokenInvalidException $e) {
@@ -558,10 +563,11 @@ class SaTokenTests extends ThinkTestCase
         $tokenB = SaToken::login(self::ANOTHER_USER_ID);
 
         $exception = null;
+
         try {
             SaToken::checkLogin($tokenA);
             SaToken::checkLogin($tokenB);
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $exception = $e;
         }
 
@@ -575,7 +581,7 @@ class SaTokenTests extends ThinkTestCase
     {
         set_satoken_test_config(['timeout' => 3, 'auto_renew' => true, 'renew_buffer' => 3]);
 
-        $token = SaToken::login(self::TEST_USER_ID);
+        $token        = SaToken::login(self::TEST_USER_ID);
         $expireBefore = SaToken::getTokenExpireTime($token);
 
         sleep(2); // 剩余时间约 1s，低于 buffer 3s
@@ -583,8 +589,11 @@ class SaTokenTests extends ThinkTestCase
         SaToken::checkLogin($token);
 
         $expireAfter = SaToken::getTokenExpireTime($token);
-        $this->assertGreaterThan($expireBefore, $expireAfter,
-            'checkLogin 通过校验后应触发滑动续期，expire_time 应被刷新');
+        $this->assertGreaterThan(
+            $expireBefore,
+            $expireAfter,
+            'checkLogin 通过校验后应触发滑动续期，expire_time 应被刷新'
+        );
 
         reset_satoken_test_config();
     }
@@ -594,23 +603,25 @@ class SaTokenTests extends ThinkTestCase
      */
     public function test_check_login_consistent_with_is_login()
     {
-        $validToken = SaToken::login(self::TEST_USER_ID);
+        $validToken   = SaToken::login(self::TEST_USER_ID);
         $invalidToken = SaToken::createToken();
 
         $this->assertTrue(SaToken::isLogin($validToken));
         $thrown = null;
+
         try {
             SaToken::checkLogin($validToken);
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $thrown = $e;
         }
         $this->assertNull($thrown, 'isLogin 为 true 的 token，checkLogin 也应通过');
 
         $this->assertFalse(SaToken::isLogin($invalidToken));
         $thrown = null;
+
         try {
             SaToken::checkLogin($invalidToken);
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $thrown = $e;
         }
         $this->assertNotNull($thrown, 'isLogin 为 false 的 token，checkLogin 应抛出异常');
@@ -621,7 +632,7 @@ class SaTokenTests extends ThinkTestCase
      */
     public function test_kickout_by_id_removes_token()
     {
-        $token = SaToken::login(self::TEST_USER_ID);
+        $token        = SaToken::login(self::TEST_USER_ID);
         $anotherToken = SaToken::login(self::ANOTHER_USER_ID);
 
         $this->assertTrue(SaToken::isLogin($token));

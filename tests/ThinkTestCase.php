@@ -50,24 +50,24 @@ class ThinkTestCase extends BaseTestCase
             'app_debug' => true,
             'app_trace' => false,
             // 配置缓存驱动，使用file缓存用于测试
-            'cache' => [
+            'cache'     => [
                 'default' => 'file',
-                'stores' => [
+                'stores'  => [
                     'file' => [
-                        'type' => 'file',
-                        'path' => __DIR__.'/../runtime/cache/',
+                        'type'   => 'file',
+                        'path'   => __DIR__.'/../runtime/cache/',
                         'expire' => 0,
                         'prefix' => '',
                     ],
                 ],
             ],
             // 初始化 satoken 配置
-            'satoken' => [
-                'token_name' => 'satoken',
-                'timeout' => 7200,
-                'is_concurrent' => true,
+            'satoken'   => [
+                'token_name'      => 'satoken',
+                'timeout'         => 7200,
+                'is_concurrent'   => true,
                 'max_login_count' => 10,
-                'auto_renew' => true,
+                'auto_renew'      => true,
                 'renew_threshold' => 0.3,
             ],
         ]);

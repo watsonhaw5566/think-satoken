@@ -25,10 +25,10 @@ class SaToken implements SatokenInterface
      * @var array<string, mixed>
      */
     protected $config = [
-        'token_name' => '',       // 自定义 Token 请求头名称
-        'store' => null,          // 缓存通道名称（null 表示使用默认缓存）
-        'timeout' => 604800,      // Token 有效期（秒），默认 7 天
-        'auto_renew' => true,     // 是否启用滑动续期
+        'token_name'   => '',       // 自定义 Token 请求头名称
+        'store'        => null,          // 缓存通道名称（null 表示使用默认缓存）
+        'timeout'      => 604800,      // Token 有效期（秒），默认 7 天
+        'auto_renew'   => true,     // 是否启用滑动续期
         'renew_buffer' => 3600,   // 续期缓冲时间（秒），剩余不足此时才续期，默认 1 小时
     ];
 
@@ -40,7 +40,7 @@ class SaToken implements SatokenInterface
     protected function cache()
     {
         $config = $this->getConfig();
-        $store = $config['store'] ?? null;
+        $store  = $config['store'] ?? null;
 
         return $store ? Cache::store($store) : Cache::store();
     }
@@ -54,12 +54,12 @@ class SaToken implements SatokenInterface
      */
     public function login(int $loginId, array $extra = []): string
     {
-        $config = $this->getConfig();
+        $config  = $this->getConfig();
         $timeout = (int) $config['timeout'];
-        $cache = $this->cache();
+        $cache   = $this->cache();
 
-        $token = $this->createToken();
-        $tokenKey = "satoken:token:$token";
+        $token      = $this->createToken();
+        $tokenKey   = "satoken:token:$token";
         $loginIdKey = "satoken:loginId:$loginId";
 
         // 顶掉旧 token
@@ -70,10 +70,10 @@ class SaToken implements SatokenInterface
 
         // 存储 token 信息
         $tokenInfo = [
-            'loginId' => $loginId,
+            'loginId'     => $loginId,
             'create_time' => time(),
             'expire_time' => time() + $timeout,
-            'extra' => $extra,
+            'extra'       => $extra,
         ];
         $cache->set($tokenKey, $tokenInfo, $timeout);
 
@@ -133,7 +133,7 @@ class SaToken implements SatokenInterface
             return null;
         }
 
-        $tokenKey = "satoken:token:$token";
+        $tokenKey  = "satoken:token:$token";
         $tokenInfo = $this->cache()->get($tokenKey);
 
         return is_array($tokenInfo) ? $tokenInfo : null;
@@ -168,7 +168,7 @@ class SaToken implements SatokenInterface
             throw new TokenInvalidException('无效的token格式');
         }
 
-        $tokenKey = "satoken:token:$token";
+        $tokenKey  = "satoken:token:$token";
         $tokenInfo = $this->cache()->get($tokenKey);
         if (! is_array($tokenInfo)) {
             throw new TokenInvalidException('无效的token');
@@ -219,8 +219,8 @@ class SaToken implements SatokenInterface
         }
 
         // 删除 token 信息和映射
-        $cache = $this->cache();
-        $tokenKey = "satoken:token:$token";
+        $cache      = $this->cache();
+        $tokenKey   = "satoken:token:$token";
         $loginIdKey = "satoken:loginId:$loginId";
 
         $cache->delete($tokenKey);
@@ -269,23 +269,23 @@ class SaToken implements SatokenInterface
         }
 
         $timeout = (int) $config['timeout'];
-        $buffer = isset($config['renew_buffer']) ? (int) $config['renew_buffer'] : 3600;
+        $buffer  = isset($config['renew_buffer']) ? (int) $config['renew_buffer'] : 3600;
         if ($buffer < 0) {
             $buffer = 3600;
         }
 
         $expireTime = isset($tokenInfo['expire_time']) ? (int) $tokenInfo['expire_time'] : 0;
-        $remaining = $expireTime - time();
+        $remaining  = $expireTime - time();
 
         // 剩余时间不足缓冲值时才续期
         if ($remaining >= $buffer) {
             return;
         }
 
-        $newExpire = time() + $timeout;
+        $newExpire                = time() + $timeout;
         $tokenInfo['expire_time'] = $newExpire;
 
-        $cache = $this->cache();
+        $cache    = $this->cache();
         $tokenKey = "satoken:token:$token";
         $cache->set($tokenKey, $tokenInfo, $timeout);
 
@@ -361,7 +361,7 @@ class SaToken implements SatokenInterface
         }
 
         $tokenInfo = $this->getValidTokenInfo($token);
-        $loginId = $this->extractLoginIdOrThrow($tokenInfo);
+        $loginId   = $this->extractLoginIdOrThrow($tokenInfo);
         $this->renewIfNeeded($token, $tokenInfo);
 
         return $loginId;
@@ -417,7 +417,7 @@ class SaToken implements SatokenInterface
             return false;
         }
 
-        $cache = $this->cache();
+        $cache     = $this->cache();
         $tokenInfo = $this->fetchTokenInfo($token);
         if ($tokenInfo === null) {
             return false;
@@ -479,9 +479,9 @@ class SaToken implements SatokenInterface
      */
     public function kickout(int $id): bool
     {
-        $cache = $this->cache();
+        $cache      = $this->cache();
         $loginIdKey = "satoken:loginId:$id";
-        $token = $cache->get($loginIdKey);
+        $token      = $cache->get($loginIdKey);
 
         if (!is_string($token) || $token === '') {
             return false;

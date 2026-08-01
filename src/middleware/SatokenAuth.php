@@ -7,6 +7,7 @@ use satoken\exception\NotLoginException;
 use satoken\exception\SatokenException;
 use satoken\exception\TokenInvalidException;
 use satoken\facade\SaToken;
+use Exception;
 
 class SatokenAuth
 {
@@ -23,19 +24,19 @@ class SatokenAuth
         } catch (NotLoginException|TokenInvalidException $e) {
             return json([
                 'code' => $e->getErrorCode(),
-                'msg' => $e->getMessage(),
+                'msg'  => $e->getMessage(),
                 'data' => null,
             ], 401);
         } catch (SatokenException $e) {
             return json([
                 'code' => $e->getErrorCode(),
-                'msg' => $e->getMessage(),
+                'msg'  => $e->getMessage(),
                 'data' => null,
             ], 400);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return json([
                 'code' => 500,
-                'msg' => '服务器内部错误',
+                'msg'  => '服务器内部错误',
                 'data' => null,
             ], 500);
         }

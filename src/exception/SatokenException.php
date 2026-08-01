@@ -2,19 +2,22 @@
 
 namespace satoken\exception;
 
+use RuntimeException;
+use Throwable;
+
 /**
  * SaToken 基础异常类
  */
-class SatokenException extends \RuntimeException
+class SatokenException extends RuntimeException
 {
     /**
      * 构造函数
      *
      * @param  string  $message  错误消息
      * @param  int  $code  错误码
-     * @param  \Throwable|null  $previous  上一个异常
+     * @param  Throwable|null  $previous  上一个异常
      */
-    public function __construct(string $message = 'SaToken Exception', int $code = 400, ?\Throwable $previous = null)
+    public function __construct(string $message = 'SaToken Exception', int $code = 400, ?Throwable $previous = null)
     {
         parent::__construct($message, $code, $previous);
     }

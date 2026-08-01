@@ -5,18 +5,18 @@
 // +----------------------------------------------------------------------
 return [
     // 自定义 Token 请求头名称（为空则使用 Authorization: Bearer {token}）
-    'token_name' => '',
+    'token_name'   => '',
 
     // 缓存通道名称（对应 cache.php 配置中的 stores 键名）
     // null 表示使用框架默认缓存（适用于单机部署）
     // 多机部署请配置为 'redis' 并确保在 cache.php 中正确配置 Redis 驱动
-    'store' => null,
+    'store'        => null,
 
     // Token 有效期（秒），默认 7 天
-    'timeout' => 604800,
+    'timeout'      => 604800,
 
     // 是否启用滑动续期（用户活跃时自动延长有效期）
-    'auto_renew' => true,
+    'auto_renew'   => true,
 
     // 续期缓冲时间（秒）：剩余有效期不足此值时才续期
     // 默认 3600 秒（1小时），避免每次请求都写缓存
