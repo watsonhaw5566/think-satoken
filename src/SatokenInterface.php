@@ -20,7 +20,7 @@ interface SatokenInterface
     public function validateTokenFormat(string $token): bool;
 
     /**
-     * 登录功能
+     * 登录功能（单端登录：新登录自动顶掉旧 token）
      *
      * @param  int  $loginId  用户登录ID
      * @param  array<string, mixed>  $extra  额外自定义内容
@@ -37,10 +37,10 @@ interface SatokenInterface
     public function logout(?string $token = null): bool;
 
     /**
-     * 强制踢出指定用户的所有 token（根据 loginId 踢出）
+     * 强制踢出指定用户（删除其当前 token）
      *
      * @param  int  $id  用户登录ID
-     * @return bool 是否踢出成功（至少有一个 token 被移除）
+     * @return bool 是否踢出成功
      */
     public function kickout(int $id): bool;
 
@@ -116,23 +116,4 @@ interface SatokenInterface
      * @param  array<string, mixed>  $extra
      */
     public function setExtra(?string $token = null, array $extra = []): bool;
-
-    /**
-     * 当前缓存驱动是否为 Redis
-     *
-     * 内部采用一次性缓存优化，避免在每次 login/kickout 时重复调用 class_exists 检测
-     *
-     * @return bool true 表示当前驱动是 think-cache 的 RedisHandler
-     */
-    public function isRedisDriver(): bool;
-
-    /**
-     * 重置 isRedisDriver 的内部缓存
-     *
-     * 调用后下一次 isRedisDriver() 会重新通过 class_exists 检测驱动类型
-     * 用于动态切换驱动类型的测试或运行场景
-     *
-     * @return void
-     */
-    public function resetDriverDetection(): void;
 }

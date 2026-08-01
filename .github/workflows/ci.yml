@@ -47,8 +47,11 @@ jobs:
       - name: Install dependencies
         run: composer install --prefer-dist --no-progress --no-suggest
 
+      - name: Run PHP CS Fixer
+        run: composer check-style
+
+      - name: Run PHPStan
+        run: composer analyze
+
       - name: Run test suite
         run: composer test
-
-      - name: Run static analysis
-        run: composer analyze

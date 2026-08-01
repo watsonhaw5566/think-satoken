@@ -1,4 +1,13 @@
+# IDE
 .idea
+.vscode
+
+# 运行时文件
 runtime
 vendor
+
+# 缓存
 .phpunit.result.cache
+.php-cs-fixer.cache
+#AI
+.trae

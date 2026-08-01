@@ -1,6 +1,6 @@
 {
   "name": "watsonhaw/think-satoken",
-  "description": "satoken extend for thinkphp8",
+  "description": "satoken extend for thinkphp6|8",
   "license": "MIT",
   "authors": [
     {
@@ -22,17 +22,23 @@
     ]
   },
   "require": {
-    "php": "^8.0",
+    "php": "^7.1||^8.0",
     "ramsey/uuid": "^4.7"
   },
   "require-dev": {
     "phpunit/phpunit": "^12.2",
-    "topthink/framework": "^8.0",
+    "topthink/framework": "^6.0||^8.0",
+    "friendsofphp/php-cs-fixer": "^3.95",
     "phpstan/phpstan": "^2.0"
   },
   "scripts": {
-    "test": "vendor/bin/phpunit",
-    "analyze": "phpstan analyze --no-progress --memory-limit=1G"
+    "test": "phpunit",
+    "analyze": "phpstan --no-progress --memory-limit=1G",
+    "fix-style": "php-cs-fixer fix",
+    "check-style": "php-cs-fixer fix --dry-run"
+  },
+  "config": {
+    "sort-packages": true
   },
   "extra": {
     "think": {
