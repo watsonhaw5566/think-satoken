@@ -11,10 +11,8 @@ if (! function_exists('get_satoken_default_config')) {
         return [
             'token_name' => 'satoken',
             'timeout' => 7200,
-            'is_concurrent' => true,
-            'max_login_count' => 10,
             'auto_renew' => true,
-            'renew_threshold' => 0.3,
+            'renew_buffer' => 3600,
         ];
     }
 }
