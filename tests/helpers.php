@@ -9,7 +9,8 @@ if (! function_exists('get_satoken_default_config')) {
     function get_satoken_default_config(): array
     {
         return [
-            'token_name' => 'satoken',
+            'token_name' => '',
+            'store' => null,
             'timeout' => 7200,
             'auto_renew' => true,
             'renew_buffer' => 3600,

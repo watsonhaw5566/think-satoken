@@ -5,7 +5,6 @@ namespace satoken;
 use Ramsey\Uuid\Uuid;
 use satoken\exception\NotLoginException;
 use satoken\exception\TokenInvalidException;
-use think\cache\driver\Redis as RedisDriver;
 use think\facade\Cache;
 use think\facade\Config;
 use think\facade\Request;
@@ -27,54 +26,23 @@ class SaToken implements SatokenInterface
      */
     protected $config = [
         'token_name' => '',       // 自定义 Token 请求头名称
+        'store' => null,          // 缓存通道名称（null 表示使用默认缓存）
         'timeout' => 604800,      // Token 有效期（秒），默认 7 天
         'auto_renew' => true,     // 是否启用滑动续期
         'renew_buffer' => 3600,   // 续期缓冲时间（秒），剩余不足此时才续期，默认 1 小时
     ];
 
     /**
-     * 缓存当前驱动是否为 Redis
+     * 获取缓存实例（支持指定 store）
      *
-     * @var bool|null
+     * @return \think\Cache
      */
-    protected $isRedisDriver = null;
-
-    /**
-     * 检测当前缓存驱动是否为 Redis
-     *
-     * @return bool
-     */
-    public function isRedisDriver(): bool
+    protected function cache()
     {
-        if ($this->isRedisDriver !== null) {
-            return $this->isRedisDriver;
-        }
+        $config = $this->getConfig();
+        $store = $config['store'] ?? null;
 
-        try {
-            $driver = Cache::store();
-            $isRedis = $driver instanceof RedisDriver;
-
-            if (!$isRedis && is_object($driver)) {
-                $className = get_class($driver);
-                $isRedis = stripos($className, 'redis') !== false;
-            }
-
-            $this->isRedisDriver = $isRedis;
-
-            return $isRedis;
-        } catch (\Throwable $e) {
-            $this->isRedisDriver = false;
-
-            return false;
-        }
-    }
-
-    /**
-     * 重置驱动检测状态（主要用于测试或驱动切换场景）
-     */
-    public function resetDriverDetection(): void
-    {
-        $this->isRedisDriver = null;
+        return $store ? Cache::store($store) : Cache::store();
     }
 
     /**
@@ -88,15 +56,16 @@ class SaToken implements SatokenInterface
     {
         $config = $this->getConfig();
         $timeout = (int) $config['timeout'];
+        $cache = $this->cache();
 
         $token = $this->createToken();
         $tokenKey = "satoken:token:$token";
         $loginIdKey = "satoken:loginId:$loginId";
 
         // 顶掉旧 token
-        $oldToken = Cache::get($loginIdKey);
+        $oldToken = $cache->get($loginIdKey);
         if (is_string($oldToken) && $oldToken !== '') {
-            Cache::delete("satoken:token:$oldToken");
+            $cache->delete("satoken:token:$oldToken");
         }
 
         // 存储 token 信息
@@ -106,10 +75,10 @@ class SaToken implements SatokenInterface
             'expire_time' => time() + $timeout,
             'extra' => $extra,
         ];
-        Cache::set($tokenKey, $tokenInfo, $timeout);
+        $cache->set($tokenKey, $tokenInfo, $timeout);
 
         // 更新 loginId -> token 映射（单 token，直接覆盖）
-        Cache::set($loginIdKey, $token, $timeout);
+        $cache->set($loginIdKey, $token, $timeout);
 
         return $token;
     }
@@ -165,7 +134,7 @@ class SaToken implements SatokenInterface
         }
 
         $tokenKey = "satoken:token:$token";
-        $tokenInfo = Cache::get($tokenKey);
+        $tokenInfo = $this->cache()->get($tokenKey);
 
         return is_array($tokenInfo) ? $tokenInfo : null;
     }
@@ -200,7 +169,7 @@ class SaToken implements SatokenInterface
         }
 
         $tokenKey = "satoken:token:$token";
-        $tokenInfo = Cache::get($tokenKey);
+        $tokenInfo = $this->cache()->get($tokenKey);
         if (! is_array($tokenInfo)) {
             throw new TokenInvalidException('无效的token');
         }
@@ -250,11 +219,12 @@ class SaToken implements SatokenInterface
         }
 
         // 删除 token 信息和映射
+        $cache = $this->cache();
         $tokenKey = "satoken:token:$token";
         $loginIdKey = "satoken:loginId:$loginId";
 
-        Cache::delete($tokenKey);
-        Cache::delete($loginIdKey);
+        $cache->delete($tokenKey);
+        $cache->delete($loginIdKey);
 
         return true;
     }
@@ -315,13 +285,14 @@ class SaToken implements SatokenInterface
         $newExpire = time() + $timeout;
         $tokenInfo['expire_time'] = $newExpire;
 
+        $cache = $this->cache();
         $tokenKey = "satoken:token:$token";
-        Cache::set($tokenKey, $tokenInfo, $timeout);
+        $cache->set($tokenKey, $tokenInfo, $timeout);
 
         // 同步续期 loginId -> token 映射
         if (isset($tokenInfo['loginId']) && is_int($tokenInfo['loginId'])) {
             $loginIdKey = 'satoken:loginId:'.$tokenInfo['loginId'];
-            Cache::set($loginIdKey, $token, $timeout);
+            $cache->set($loginIdKey, $token, $timeout);
         }
     }
 
@@ -446,6 +417,7 @@ class SaToken implements SatokenInterface
             return false;
         }
 
+        $cache = $this->cache();
         $tokenInfo = $this->fetchTokenInfo($token);
         if ($tokenInfo === null) {
             return false;
@@ -459,7 +431,7 @@ class SaToken implements SatokenInterface
             return false;
         }
         $tokenInfo['extra'] = $extra;
-        Cache::set("satoken:token:$token", $tokenInfo, $remain);
+        $cache->set("satoken:token:$token", $tokenInfo, $remain);
 
         return true;
     }
@@ -500,22 +472,23 @@ class SaToken implements SatokenInterface
     }
 
     /**
-     * 强制踢出指定用户（顶号：删除其当前 token）
+     * 强制踢出指定用户（删除其当前 token）
      *
      * @param int $id 用户登录ID
      * @return bool 是否踢出成功
      */
     public function kickout(int $id): bool
     {
+        $cache = $this->cache();
         $loginIdKey = "satoken:loginId:$id";
-        $token = Cache::get($loginIdKey);
+        $token = $cache->get($loginIdKey);
 
         if (!is_string($token) || $token === '') {
             return false;
         }
 
-        Cache::delete("satoken:token:$token");
-        Cache::delete($loginIdKey);
+        $cache->delete("satoken:token:$token");
+        $cache->delete($loginIdKey);
 
         return true;
     }

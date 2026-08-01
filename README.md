@@ -6,10 +6,11 @@ think-satoken 是一个轻量级权限认证扩展，专为 ThinkPHP(6|8) 框架
 
 ## 设计理念
 
-- **极简配置**：4 个核心配置项，开箱即用
+- **极简配置**：5 个核心配置项，开箱即用
 - **单端登录**：默认同一账号同一时间只允许一个设备在线（新登录自动顶掉旧设备）
 - **直观续期**：使用秒数而非百分比配置续期阈值，无需心算
 - **无状态 Token**：使用纯 UUID v4 作为 token，无需签名，依赖缓存存储会话状态
+- **缓存隔离**：通过 `store` 配置指定专用缓存通道，避免与业务缓存互相干扰
 
 ## 功能特性
 
@@ -21,11 +22,52 @@ think-satoken 是一个轻量级权限认证扩展，专为 ThinkPHP(6|8) 框架
 - 📦 **自定义附加信息**：登录时可附加 `extra` 数据，支持运行时更新
 - ⚡ **高性能**：基于 think-cache 实现，支持 File / Redis 等多种驱动
 
-## 部署要求
+## 部署指南
 
-> ⚠️ **多机/多实例部署时必须使用 Redis 缓存**
->
-> think-satoken 依赖 ThinkPHP 的缓存系统存储 token 会话信息。使用 File 缓存时，会话数据存储在本地文件系统，只能在单台服务器上共享。如果你的应用部署在多台服务器（如负载均衡环境），请务必将缓存驱动配置为 **Redis**，否则会出现用户在 A 机登录后，请求打到 B 机时提示未登录的问题。
+### 单机部署
+
+使用默认的 File 缓存即可，无需额外配置。
+
+### 多机/多实例部署
+
+多机部署（负载均衡环境）时，token 会话数据需要在多台服务器之间共享。请在配置中指定 `store` 为 `'redis'`：
+
+```php
+// config/satoken.php
+return [
+    'store' => 'redis',
+    // ...
+];
+```
+
+同时确保在 `config/cache.php` 中正确配置 Redis 缓存通道（参考 [ThinkPHP 缓存文档](https://doc.thinkphp.cn/v8_0/caches.html)）：
+
+```php
+// config/cache.php
+return [
+    'default' => 'file',
+    'stores' => [
+        // 业务默认缓存（file）
+        'file' => [
+            'type' => 'File',
+            // ...
+        ],
+        // SaToken 专用 Redis 缓存
+        'redis' => [
+            'type' => 'redis',
+            'host' => '127.0.0.1',
+            'port' => 6379,
+            'password' => '',
+            'select' => 0,
+            'timeout' => 0,
+            'persistent' => false,
+            'prefix' => 'satoken:',
+        ],
+    ],
+];
+```
+
+**为什么需要 Redis？** File 缓存将数据存储在本地文件系统，不同服务器之间无法共享。用户在 A 机登录后，请求打到 B 机时 B 机的文件缓存中没有该 token，会导致误判为未登录。
 
 ## 安装
 
@@ -43,6 +85,11 @@ composer require watsonhaw/think-satoken
 return [
     // 自定义 Token 请求头名称（为空则使用 Authorization: Bearer {token}）
     'token_name' => '',
+
+    // 缓存通道名称（对应 cache.php 配置中的 stores 键名）
+    // null 表示使用框架默认缓存
+    // 多机部署请配置为 'redis' 并确保在 cache.php 中正确配置
+    'store' => null,
 
     // Token 有效期（秒），默认 7 天
     'timeout' => 604800,
@@ -62,6 +109,7 @@ return [
 | 配置项 | 类型 | 默认值 | 说明 |
 |--------|------|--------|------|
 | `token_name` | string | `''` | 自定义请求头名称，为空时从 `Authorization: Bearer` 读取 |
+| `store` | string\|null | `null` | 缓存通道名称，对应 `cache.php` 中的 `stores` 键；null 使用默认缓存 |
 | `timeout` | int | `604800` | Token 有效期（秒），默认 7 天 |
 | `auto_renew` | bool | `true` | 是否启用滑动续期 |
 | `renew_buffer` | int | `3600` | 续期缓冲时间（秒），剩余不足此时才触发续期，设为 0 表示每次访问都续期 |
@@ -72,6 +120,10 @@ return [
 - 用户登录后前 6 天访问时**不会**触发写操作（性能最优）
 - 当剩余有效期不足 1 小时时访问，自动续期为新的 7 天
 - 设 `renew_buffer` = 0 则每次访问都续期（最实时，但写缓存频繁）
+
+**缓存隔离建议**：
+
+即使是单机部署，也建议为 SaToken 配置独立的缓存通道（如单独的 Redis select 或独立的文件目录），通过 `prefix` 区分，便于管理和清理。
 
 ## 使用示例
 
@@ -187,7 +239,6 @@ try {
 | `getTokenRemainingTime(?string $token = null): int` | 获取剩余有效秒数 |
 | `kickout(int $id): bool` | 强制踢出用户 |
 | `kickoutByToken(string $token): bool` | 强制踢出指定 token |
-| `isRedisDriver(): bool` | 检测当前缓存驱动是否为 Redis |
 
 ## 缓存键说明
 
@@ -195,6 +246,8 @@ try {
 |----|------|-----|------|
 | `satoken:token:{uuid}` | array | `timeout` | token 信息（loginId、create_time、expire_time、extra） |
 | `satoken:loginId:{id}` | string | `timeout` | 用户 ID 到当前 token 的映射（单 token） |
+
+> 如果配置了 `store` 指向自定义缓存通道（如 Redis），这些键将存储在对应通道中；如果该通道配置了 `prefix`，实际键名会自动加上该前缀。
 
 ## 开发和测试
 
