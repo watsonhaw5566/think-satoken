@@ -20,7 +20,7 @@ interface SatokenInterface
     public function validateTokenFormat(string $token): bool;
 
     /**
-     * 登录功能（单端登录：新登录自动顶掉旧 token）
+     * 登录功能（多 Token 在线：同一账号可重复登录，最多 max_login_count 个，超出则顶掉最早的）
      *
      * @param  int  $loginId  用户登录ID
      * @param  array<string, mixed>  $extra  额外自定义内容
@@ -29,7 +29,7 @@ interface SatokenInterface
     public function login(int $loginId, array $extra = []): string;
 
     /**
-     * 登出功能
+     * 登出功能（仅登出指定的 token，同账号的其他 token 不受影响）
      *
      * @param  string|null  $token  用户token
      * @return bool 是否登出成功
@@ -37,7 +37,7 @@ interface SatokenInterface
     public function logout(?string $token = null): bool;
 
     /**
-     * 强制踢出指定用户（删除其当前 token）
+     * 强制踢出指定用户（删除该账号下的全部 token，使其所有端都下线）
      *
      * @param  int  $id  用户登录ID
      * @return bool 是否踢出成功
@@ -45,7 +45,7 @@ interface SatokenInterface
     public function kickout(int $id): bool;
 
     /**
-     * 强制踢出指定 token
+     * 强制踢出指定 token（仅使其单个 token 失效，同账号其他 token 不受影响）
      *
      * @param  string  $token  用户token
      * @return bool 是否踢出成功

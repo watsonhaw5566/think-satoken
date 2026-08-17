@@ -9,11 +9,12 @@ if (! function_exists('get_satoken_default_config')) {
     function get_satoken_default_config(): array
     {
         return [
-            'token_name'   => '',
-            'store'        => null,
-            'timeout'      => 7200,
-            'auto_renew'   => true,
-            'renew_before' => 3600,
+            'token_name'      => '',
+            'store'           => null,
+            'timeout'         => 7200,
+            'auto_renew'      => true,
+            'renew_before'    => 3600,
+            'max_login_count' => 10,
         ];
     }
 }

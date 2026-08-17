@@ -78,7 +78,7 @@ class SaTokenTests extends ThinkTestCase
 
         $expireBefore = SaToken::getTokenExpireTime($token);
 
-        // 等待 1 秒（剩余 ~9s，仍然高于 before 3s）
+        // 等待 1 秒（剩余 ~9s，仍然高于 renew_before 3s）
         sleep(1);
 
         $this->assertTrue(SaToken::isLogin($token));
@@ -98,7 +98,7 @@ class SaTokenTests extends ThinkTestCase
 
         $token = SaToken::login(self::TEST_USER_ID);
 
-        // 等待 2 秒，剩余 ~1s < before 2s，应该触发续期
+        // 等待 2 秒，剩余 ~1s < renew_before 2s，应该触发续期
         sleep(2);
 
         $expireBefore = SaToken::getTokenExpireTime($token);
@@ -215,28 +215,87 @@ class SaTokenTests extends ThinkTestCase
         $this->assertNotEmpty($tokenInfo);
         $this->assertEquals(self::TEST_USER_ID, $tokenInfo['loginId']);
 
-        // 验证loginId与token的映射关系已建立（单token，存字符串）
-        $loginIdKey  = 'satoken:loginId:'.self::TEST_USER_ID;
-        $storedToken = Cache::get($loginIdKey);
-        $this->assertSame($token, $storedToken);
+        // 验证 loginId -> token 列表映射关系已建立（列表中包含该 token）
+        $loginIdKey = 'satoken:loginId:'.self::TEST_USER_ID;
+        $storedList = Cache::get($loginIdKey);
+        $this->assertIsArray($storedList);
+        $this->assertContains($token, $storedList);
     }
 
     /**
-     * 测试单端登录：新登录应顶掉旧token
+     * 测试多 Token 在线：同一用户多次登录，所有 token 都有效，互不顶号（在 max_login_count 内）
      */
-    public function test_new_login_kicks_out_old_token()
+    public function test_multiple_logins_keep_all_tokens_valid_within_max()
     {
+        set_satoken_test_config(['max_login_count' => 5]);
+
         $t1 = SaToken::login(self::TEST_USER_ID);
-        $this->assertTrue(SaToken::isLogin($t1));
-
         $t2 = SaToken::login(self::TEST_USER_ID);
-        $this->assertTrue(SaToken::isLogin($t2));
-        // 旧token应失效
-        $this->assertFalse(SaToken::isLogin($t1));
+        $t3 = SaToken::login(self::TEST_USER_ID);
 
-        // 映射应指向新token
+        // 3 个 token 都应当有效
+        $this->assertTrue(SaToken::isLogin($t1), '第 1 次登录的 token 应仍然有效');
+        $this->assertTrue(SaToken::isLogin($t2), '第 2 次登录的 token 应仍然有效');
+        $this->assertTrue(SaToken::isLogin($t3), '第 3 次登录的 token 应仍然有效');
+
+        // 3 个 token 指向同一个 loginId
+        $this->assertSame(self::TEST_USER_ID, SaToken::getCurrentLoginId($t1));
+        $this->assertSame(self::TEST_USER_ID, SaToken::getCurrentLoginId($t2));
+        $this->assertSame(self::TEST_USER_ID, SaToken::getCurrentLoginId($t3));
+
+        reset_satoken_test_config();
+    }
+
+    /**
+     * 测试 max_login_count 限制：超出时最早的 token 被顶掉，后面的保留
+     */
+    public function test_exceeding_max_login_count_kicks_out_oldest()
+    {
+        set_satoken_test_config(['max_login_count' => 3]);
+
+        $t1 = SaToken::login(self::TEST_USER_ID);
+        $t2 = SaToken::login(self::TEST_USER_ID);
+        $t3 = SaToken::login(self::TEST_USER_ID);
+        // 第 4 次登录应顶掉 t1（最早的）
+        $t4 = SaToken::login(self::TEST_USER_ID);
+
+        $this->assertFalse(SaToken::isLogin($t1), '超出上限后最早的 t1 应失效');
+        $this->assertTrue(SaToken::isLogin($t2), 't2 应仍然有效');
+        $this->assertTrue(SaToken::isLogin($t3), 't3 应仍然有效');
+        $this->assertTrue(SaToken::isLogin($t4), 't4 应仍然有效');
+
+        // 列表中只保留 3 个（t2, t3, t4）
         $loginIdKey = 'satoken:loginId:'.self::TEST_USER_ID;
-        $this->assertSame($t2, Cache::get($loginIdKey));
+        $storedList = Cache::get($loginIdKey);
+        $this->assertCount(3, $storedList);
+        $this->assertNotContains($t1, $storedList);
+
+        reset_satoken_test_config();
+    }
+
+    /**
+     * 测试登出 A token 不影响同账号的 B token（多端友好）
+     */
+    public function test_logout_one_token_does_not_affect_others()
+    {
+        set_satoken_test_config(['max_login_count' => 10]);
+
+        $phone = SaToken::login(self::TEST_USER_ID);
+        $pc    = SaToken::login(self::TEST_USER_ID);
+        $pad   = SaToken::login(self::TEST_USER_ID);
+
+        $this->assertTrue(SaToken::isLogin($phone));
+        $this->assertTrue(SaToken::isLogin($pc));
+        $this->assertTrue(SaToken::isLogin($pad));
+
+        // 手机端登出
+        SaToken::logout($phone);
+
+        $this->assertFalse(SaToken::isLogin($phone), '手机端登出后该 token 应失效');
+        $this->assertTrue(SaToken::isLogin($pc), 'PC 端 token 应不受影响');
+        $this->assertTrue(SaToken::isLogin($pad), '平板端 token 应不受影响');
+
+        reset_satoken_test_config();
     }
 
     /**
@@ -252,6 +311,22 @@ class SaTokenTests extends ThinkTestCase
         $this->assertEquals($extra, $info['extra']);
 
         $this->assertEquals($extra, SaToken::getExtra($token));
+    }
+
+    /**
+     * 测试多 token 各自拥有独立的 extra 数据，互不干扰
+     */
+    public function test_multiple_tokens_each_have_independent_extra()
+    {
+        set_satoken_test_config(['max_login_count' => 5]);
+
+        $tA = SaToken::login(self::TEST_USER_ID, ['device' => 'phone', 'scopes' => ['read']]);
+        $tB = SaToken::login(self::TEST_USER_ID, ['device' => 'pc',    'scopes' => ['read', 'write']]);
+
+        $this->assertEquals(['device' => 'phone', 'scopes' => ['read']], SaToken::getExtra($tA));
+        $this->assertEquals(['device' => 'pc',    'scopes' => ['read', 'write']], SaToken::getExtra($tB));
+
+        reset_satoken_test_config();
     }
 
     /**
@@ -317,25 +392,28 @@ class SaTokenTests extends ThinkTestCase
     }
 
     /**
-     * 测试登出功能是否正确移除token
+     * 测试登出功能是否正确移除 token（不影响其他 token）
      */
     public function test_logout_removes_token()
     {
-        $token = SaToken::login(self::TEST_USER_ID);
+        set_satoken_test_config(['max_login_count' => 5]);
 
-        $this->assertTrue(SaToken::isLogin($token));
+        $t1 = SaToken::login(self::TEST_USER_ID);
+        $t2 = SaToken::login(self::TEST_USER_ID);
 
-        $result = SaToken::logout($token);
+        $this->assertTrue(SaToken::isLogin($t1));
+        $this->assertTrue(SaToken::isLogin($t2));
 
+        $result = SaToken::logout($t1);
         $this->assertTrue($result);
 
-        $tokenKey = "satoken:token:$token";
-        $this->assertFalse(Cache::has($tokenKey));
+        $tokenKey1 = "satoken:token:$t1";
+        $this->assertFalse(Cache::has($tokenKey1), 't1 的 token 信息应被删除');
 
-        $loginIdKey = 'satoken:loginId:'.self::TEST_USER_ID;
-        $this->assertFalse(Cache::has($loginIdKey));
+        $this->assertFalse(SaToken::isLogin($t1), 't1 应已登出');
+        $this->assertTrue(SaToken::isLogin($t2), 't2 不应被 t1 的登出影响');
 
-        $this->assertFalse(SaToken::isLogin($token));
+        reset_satoken_test_config();
     }
 
     /**
@@ -575,7 +653,7 @@ class SaTokenTests extends ThinkTestCase
     }
 
     /**
-     * checkLogin：通过校验后应触发滑动续期（剩余时间低于 before 时刷新 TTL）
+     * checkLogin：通过校验后应触发滑动续期（剩余时间低于 renew_before 时刷新 TTL）
      */
     public function test_check_login_triggers_renew_when_below_before()
     {
@@ -584,7 +662,7 @@ class SaTokenTests extends ThinkTestCase
         $token        = SaToken::login(self::TEST_USER_ID);
         $expireBefore = SaToken::getTokenExpireTime($token);
 
-        sleep(2); // 剩余时间约 1s，低于 before 3s
+        sleep(2); // 剩余时间约 1s，低于 renew_before 3s
 
         SaToken::checkLogin($token);
 
@@ -628,24 +706,37 @@ class SaTokenTests extends ThinkTestCase
     }
 
     /**
-     * 测试按 loginId 踢出用户
+     * 测试按 loginId 踢出用户：应清除该账号下所有 token（所有端都下线）
      */
-    public function test_kickout_by_id_removes_token()
+    public function test_kickout_by_id_removes_all_tokens_of_user()
     {
-        $token        = SaToken::login(self::TEST_USER_ID);
+        set_satoken_test_config(['max_login_count' => 10]);
+
+        $tA           = SaToken::login(self::TEST_USER_ID);
+        $tB           = SaToken::login(self::TEST_USER_ID);
+        $tC           = SaToken::login(self::TEST_USER_ID);
         $anotherToken = SaToken::login(self::ANOTHER_USER_ID);
 
-        $this->assertTrue(SaToken::isLogin($token));
+        $this->assertTrue(SaToken::isLogin($tA));
+        $this->assertTrue(SaToken::isLogin($tB));
+        $this->assertTrue(SaToken::isLogin($tC));
         $this->assertTrue(SaToken::isLogin($anotherToken));
 
         $result = SaToken::kickout(self::TEST_USER_ID);
         $this->assertTrue($result);
 
-        $this->assertFalse(SaToken::isLogin($token));
+        // 目标用户所有 token 全部失效
+        $this->assertFalse(SaToken::isLogin($tA));
+        $this->assertFalse(SaToken::isLogin($tB));
+        $this->assertFalse(SaToken::isLogin($tC));
+
+        // 其他用户不受影响
         $this->assertTrue(SaToken::isLogin($anotherToken));
 
         $loginIdKey = 'satoken:loginId:'.self::TEST_USER_ID;
-        $this->assertFalse(Cache::has($loginIdKey));
+        $this->assertFalse(Cache::has($loginIdKey), 'loginId -> token 列表应被删除');
+
+        reset_satoken_test_config();
     }
 
     /**
@@ -658,25 +749,31 @@ class SaTokenTests extends ThinkTestCase
     }
 
     /**
-     * 测试 kickoutByToken：踢出单个 token
+     * 测试 kickoutByToken：踢出单个 token（不影响同账号其他 token）
      */
-    public function test_kickout_by_token_removes_token_and_logs_out_user()
+    public function test_kickout_by_token_removes_only_one_token_and_keeps_others()
     {
-        $token = SaToken::login(self::TEST_USER_ID);
+        set_satoken_test_config(['max_login_count' => 10]);
 
-        $this->assertTrue(SaToken::isLogin($token));
+        $t1 = SaToken::login(self::TEST_USER_ID);
+        $t2 = SaToken::login(self::TEST_USER_ID);
 
-        $result = SaToken::kickoutByToken($token);
+        $this->assertTrue(SaToken::isLogin($t1));
+        $this->assertTrue(SaToken::isLogin($t2));
 
+        $result = SaToken::kickoutByToken($t1);
         $this->assertTrue($result);
 
-        $tokenKey = "satoken:token:$token";
-        $this->assertFalse(Cache::has($tokenKey));
+        $tokenKey1 = "satoken:token:$t1";
+        $this->assertFalse(Cache::has($tokenKey1));
 
-        $this->assertFalse(SaToken::isLogin($token));
+        $this->assertFalse(SaToken::isLogin($t1), '被踢出的 t1 应失效');
+        $this->assertTrue(SaToken::isLogin($t2), '同账号的 t2 不应受影响');
 
         $this->expectException(TokenInvalidException::class);
-        SaToken::getCurrentLoginId($token);
+        SaToken::getCurrentLoginId($t1);
+
+        reset_satoken_test_config();
     }
 
     /**
@@ -714,11 +811,89 @@ class SaTokenTests extends ThinkTestCase
      */
     public function test_kickout_by_token_on_kicked_token_returns_false()
     {
+        set_satoken_test_config(['max_login_count' => 1]);
+
         $t1 = SaToken::login(self::TEST_USER_ID);
-        SaToken::login(self::TEST_USER_ID); // t2 顶掉 t1
+        SaToken::login(self::TEST_USER_ID); // t2 顶掉 t1（因为上限为1）
 
         $this->assertFalse(SaToken::isLogin($t1));
         $this->assertFalse(SaToken::kickoutByToken($t1));
+
+        reset_satoken_test_config();
+    }
+
+    /**
+     * kickoutByToken 只下线指定 token，同账号其他 token 保持有效
+     */
+    public function test_kickout_by_token_does_not_affect_other_tokens()
+    {
+        set_satoken_test_config(['max_login_count' => 3]);
+
+        $t1 = SaToken::login(self::TEST_USER_ID, ['device' => 'A']);
+        $t2 = SaToken::login(self::TEST_USER_ID, ['device' => 'B']);
+        $t3 = SaToken::login(self::TEST_USER_ID, ['device' => 'C']);
+
+        $this->assertTrue(SaToken::kickoutByToken($t2));
+
+        $this->assertFalse(SaToken::isLogin($t2)); // B 端已下线
+        $this->assertTrue(SaToken::isLogin($t1));  // A 端仍在线
+        $this->assertTrue(SaToken::isLogin($t3));  // C 端仍在线
+        $this->assertEquals(['device' => 'A'], SaToken::getExtra($t1));
+        $this->assertEquals(['device' => 'C'], SaToken::getExtra($t3));
+
+        reset_satoken_test_config();
+    }
+
+    /**
+     * kickoutByToken 后释放名额：新登录不会误删活着的 token（关键回归测试）
+     */
+    public function test_kickout_by_token_releases_slot_and_new_login_keeps_alive_tokens()
+    {
+        set_satoken_test_config(['max_login_count' => 2]);
+
+        $t1 = SaToken::login(self::TEST_USER_ID, ['device' => 'phone']);
+        $t2 = SaToken::login(self::TEST_USER_ID, ['device' => 'pc']);
+
+        // 此时 max=2，已占满
+        $this->assertTrue(SaToken::isLogin($t1));
+        $this->assertTrue(SaToken::isLogin($t2));
+
+        // kickoutByToken 掉 t2，释放一个名额
+        SaToken::kickoutByToken($t2);
+        $this->assertFalse(SaToken::isLogin($t2));
+
+        // 再登录生成 t3，此时应该不影响 t1（之前的 bug 会误把 t1 顶掉）
+        $t3 = SaToken::login(self::TEST_USER_ID, ['device' => 'tablet']);
+        $this->assertTrue(SaToken::isLogin($t3));
+
+        // 关键断言：t1 必须还活着！
+        $this->assertTrue(SaToken::isLogin($t1), 't1 不应因 kickoutByToken 后再登录而被误删');
+        $this->assertEquals(['device' => 'phone'], SaToken::getExtra($t1));
+
+        reset_satoken_test_config();
+    }
+
+    /**
+     * logout 后同样释放名额，不影响同账号其他 token
+     */
+    public function test_logout_releases_slot_without_affecting_others()
+    {
+        set_satoken_test_config(['max_login_count' => 2]);
+
+        $t1 = SaToken::login(self::TEST_USER_ID, ['device' => 'A']);
+        $t2 = SaToken::login(self::TEST_USER_ID, ['device' => 'B']);
+
+        // 用户自己登出 t1
+        SaToken::logout($t1);
+        $this->assertFalse(SaToken::isLogin($t1));
+        $this->assertTrue(SaToken::isLogin($t2));  // B 端不受影响
+
+        // 再登录生成 t3，t2 必须仍有效
+        $t3 = SaToken::login(self::TEST_USER_ID, ['device' => 'C']);
+        $this->assertTrue(SaToken::isLogin($t2));
+        $this->assertTrue(SaToken::isLogin($t3));
+
+        reset_satoken_test_config();
     }
 
     /**

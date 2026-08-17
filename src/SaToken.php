@@ -13,7 +13,7 @@ use think\facade\Request;
  * Think-SaToken - 轻量级权限认证
  *
  * 设计原则：简单、直观，适合中小型项目
- * 默认单端登录（新设备登录自动顶掉旧设备）
+ * 默认多 Token 在线：同一账号可同时持有多个 token（支持多端登录），超出 max_login_count 时自动顶掉最早的
  *
  * 推荐通过 {@see \satoken\facade\SaToken} 门面以静态方式调用（契合 ThinkPHP 习惯）。
  */
@@ -25,11 +25,12 @@ class SaToken implements SatokenInterface
      * @var array<string, mixed>
      */
     protected $config = [
-        'token_name'   => '',       // 自定义 Token 请求头名称
-        'store'        => null,          // 缓存通道名称（null 表示使用默认缓存）
-        'timeout'      => 604800,      // Token 有效期（秒），默认 7 天
-        'auto_renew'   => true,     // 是否启用滑动续期
-        'renew_before' => 3600,   // 在过期前多少秒续期（秒），剩余不足此时才续期，默认 1 小时
+        'token_name'      => '',       // 自定义 Token 请求头名称
+        'store'           => null,          // 缓存通道名称（null 表示使用默认缓存）
+        'timeout'         => 604800,      // Token 有效期（秒），默认 7 天
+        'auto_renew'      => true,     // 是否启用滑动续期
+        'renew_before'    => 3600,   // 在过期前多少秒续期（秒），剩余不足此时才续期，默认 1 小时
+        'max_login_count' => 10,     // 同一账号最多同时在线的 token 数（即最大登录数），默认 10
     ];
 
     /**
@@ -46,7 +47,7 @@ class SaToken implements SatokenInterface
     }
 
     /**
-     * 登录功能（单端登录：新登录自动顶掉旧 token）
+     * 登录功能（多 Token 在线：同一账号可重复登录，最多 max_login_count 个，超出则顶掉最早的）
      *
      * @param int $loginId 用户登录ID
      * @param array<string, mixed> $extra 额外自定义内容
@@ -54,21 +55,39 @@ class SaToken implements SatokenInterface
      */
     public function login(int $loginId, array $extra = []): string
     {
-        $config  = $this->getConfig();
-        $timeout = (int) $config['timeout'];
-        $cache   = $this->cache();
+        $config        = $this->getConfig();
+        $timeout       = (int) $config['timeout'];
+        $maxLoginCount = isset($config['max_login_count']) ? (int) $config['max_login_count'] : 10;
+        if ($maxLoginCount < 1) {
+            $maxLoginCount = 1;
+        }
+        $cache = $this->cache();
 
         $token      = $this->createToken();
         $tokenKey   = "satoken:token:$token";
         $loginIdKey = "satoken:loginId:$loginId";
 
-        // 顶掉旧 token
-        $oldToken = $cache->get($loginIdKey);
-        if (is_string($oldToken) && $oldToken !== '') {
-            $cache->delete("satoken:token:$oldToken");
+        // 读取当前 loginId 绑定的 token 列表（按登录时间从早到晚排序）
+        $tokenList = $cache->get($loginIdKey);
+        if (! is_array($tokenList)) {
+            $tokenList = [];
+        }
+        $tokenList = array_values(array_filter($tokenList, 'is_string'));
+
+        // 先清理列表中已经失效（缓存不存在）的脏引用，避免误算数量
+        $tokenList = array_values(array_filter($tokenList, function ($t) use ($cache) {
+            return is_string($t) && $t !== '' && is_array($cache->get("satoken:token:$t"));
+        }));
+
+        // 超出最大登录数：顶掉最早的（数组头部）
+        while (count($tokenList) >= $maxLoginCount) {
+            $oldToken = array_shift($tokenList);
+            if (is_string($oldToken) && $oldToken !== '') {
+                $cache->delete("satoken:token:$oldToken");
+            }
         }
 
-        // 存储 token 信息
+        // 存储新 token 信息
         $tokenInfo = [
             'loginId'     => $loginId,
             'create_time' => time(),
@@ -77,8 +96,9 @@ class SaToken implements SatokenInterface
         ];
         $cache->set($tokenKey, $tokenInfo, $timeout);
 
-        // 更新 loginId -> token 映射（单 token，直接覆盖）
-        $cache->set($loginIdKey, $token, $timeout);
+        // 追加到 loginId -> token 列表尾部，并刷新列表 TTL
+        $tokenList[] = $token;
+        $cache->set($loginIdKey, $tokenList, $timeout);
 
         return $token;
     }
@@ -196,7 +216,36 @@ class SaToken implements SatokenInterface
     }
 
     /**
-     * 登出功能
+     * 从 loginId -> token 列表中移除指定 token（用于 logout / kickoutByToken 后保持列表干净）
+     *
+     * @param int $loginId 用户ID
+     * @param string $token 要移除的 token
+     */
+    private function removeTokenFromLoginIdList(int $loginId, string $token): void
+    {
+        $cache      = $this->cache();
+        $loginIdKey = "satoken:loginId:$loginId";
+        $tokenList  = $cache->get($loginIdKey);
+
+        if (! is_array($tokenList)) {
+            return;
+        }
+
+        $tokenList = array_values(array_filter($tokenList, function ($t) use ($token) {
+            return is_string($t) && $t !== '' && $t !== $token;
+        }));
+
+        if (count($tokenList) > 0) {
+            // 保持原有剩余 TTL 的思路：直接用 timeout 重写（列表 TTL 只取决于最晚活跃，保守起见重置为 timeout）
+            $cache->set($loginIdKey, $tokenList, (int) $this->getConfig()['timeout']);
+        } else {
+            // 列表空了直接删，不留下空壳 key
+            $cache->delete($loginIdKey);
+        }
+    }
+
+    /**
+     * 登出功能（仅登出指定的 token，同账号的其他 token 不受影响）
      *
      * @param string|null $token 用户token
      * @return bool 是否登出成功
@@ -218,13 +267,12 @@ class SaToken implements SatokenInterface
             return false;
         }
 
-        // 删除 token 信息和映射
-        $cache      = $this->cache();
-        $tokenKey   = "satoken:token:$token";
-        $loginIdKey = "satoken:loginId:$loginId";
-
+        $cache    = $this->cache();
+        $tokenKey = "satoken:token:$token";
         $cache->delete($tokenKey);
-        $cache->delete($loginIdKey);
+
+        // 同步把此 token 从 loginId -> token 列表中移除，避免脏引用误占名额
+        $this->removeTokenFromLoginIdList($loginId, $token);
 
         return true;
     }
@@ -256,7 +304,7 @@ class SaToken implements SatokenInterface
     }
 
     /**
-     * 滑动续期：如果开启 auto_renew 且剩余时间低于缓冲值，则刷新 TTL
+     * 滑动续期：如果开启 auto_renew 且剩余时间低于阈值，则刷新当前 token 的 TTL
      *
      * @param string $token 已验证格式的 token
      * @param array<string, mixed> $tokenInfo 当前 token 信息
@@ -288,12 +336,6 @@ class SaToken implements SatokenInterface
         $cache    = $this->cache();
         $tokenKey = "satoken:token:$token";
         $cache->set($tokenKey, $tokenInfo, $timeout);
-
-        // 同步续期 loginId -> token 映射
-        if (isset($tokenInfo['loginId']) && is_int($tokenInfo['loginId'])) {
-            $loginIdKey = 'satoken:loginId:'.$tokenInfo['loginId'];
-            $cache->set($loginIdKey, $token, $timeout);
-        }
     }
 
     /**
@@ -472,29 +514,40 @@ class SaToken implements SatokenInterface
     }
 
     /**
-     * 强制踢出指定用户（删除其当前 token）
+     * 强制踢出指定用户（删除该账号下的全部 token，使其所有端都下线）
      *
      * @param int $id 用户登录ID
-     * @return bool 是否踢出成功
+     * @return bool 是否踢出成功（至少有一个 token 被删除视为成功）
      */
     public function kickout(int $id): bool
     {
         $cache      = $this->cache();
         $loginIdKey = "satoken:loginId:$id";
-        $token      = $cache->get($loginIdKey);
+        $tokenList  = $cache->get($loginIdKey);
 
-        if (!is_string($token) || $token === '') {
-            return false;
+        $deletedAny = false;
+        if (is_array($tokenList)) {
+            foreach ($tokenList as $oldToken) {
+                if (is_string($oldToken) && $oldToken !== '') {
+                    if ($cache->delete("satoken:token:$oldToken")) {
+                        $deletedAny = true;
+                    }
+                }
+            }
+        }
+        // 兼容旧格式：loginId -> 单 token 字符串
+        elseif (is_string($tokenList) && $tokenList !== '') {
+            $cache->delete("satoken:token:$tokenList");
+            $deletedAny = true;
         }
 
-        $cache->delete("satoken:token:$token");
         $cache->delete($loginIdKey);
 
-        return true;
+        return $deletedAny;
     }
 
     /**
-     * 强制踢出指定 token
+     * 强制踢出指定 token（仅使其单个 token 失效，同账号其他 token 不受影响）
      *
      * @param string $token 用户token
      * @return bool 是否踢出成功
