@@ -29,7 +29,7 @@ class SaToken implements SatokenInterface
         'store'        => null,          // 缓存通道名称（null 表示使用默认缓存）
         'timeout'      => 604800,      // Token 有效期（秒），默认 7 天
         'auto_renew'   => true,     // 是否启用滑动续期
-        'renew_buffer' => 3600,   // 续期缓冲时间（秒），剩余不足此时才续期，默认 1 小时
+        'renew_before' => 3600,   // 在过期前多少秒续期（秒），剩余不足此时才续期，默认 1 小时
     ];
 
     /**
@@ -268,17 +268,17 @@ class SaToken implements SatokenInterface
             return;
         }
 
-        $timeout = (int) $config['timeout'];
-        $buffer  = isset($config['renew_buffer']) ? (int) $config['renew_buffer'] : 3600;
-        if ($buffer < 0) {
-            $buffer = 3600;
+        $timeout     = (int) $config['timeout'];
+        $renewBefore = isset($config['renew_before']) ? (int) $config['renew_before'] : 3600;
+        if ($renewBefore < 0) {
+            $renewBefore = 3600;
         }
 
         $expireTime = isset($tokenInfo['expire_time']) ? (int) $tokenInfo['expire_time'] : 0;
         $remaining  = $expireTime - time();
 
-        // 剩余时间不足缓冲值时才续期
-        if ($remaining >= $buffer) {
+        // 剩余时间不足阈值时才续期
+        if ($remaining >= $renewBefore) {
             return;
         }
 

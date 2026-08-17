@@ -13,7 +13,7 @@ if (! function_exists('get_satoken_default_config')) {
             'store'        => null,
             'timeout'      => 7200,
             'auto_renew'   => true,
-            'renew_buffer' => 3600,
+            'renew_before' => 3600,
         ];
     }
 }

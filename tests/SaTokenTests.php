@@ -50,11 +50,11 @@ class SaTokenTests extends ThinkTestCase
     }
 
     /**
-     * renew_buffer=0 时，每次访问都应续期
+     * renew_before=0 时，每次访问都应续期
      */
-    public function test_renew_buffer_zero_always_renews_on_access()
+    public function test_renew_before_zero_always_renews_on_access()
     {
-        set_satoken_test_config(['timeout' => 3, 'auto_renew' => true, 'renew_buffer' => 0]);
+        set_satoken_test_config(['timeout' => 3, 'auto_renew' => true, 'renew_before' => 0]);
 
         $token = SaToken::login(self::TEST_USER_ID);
 
@@ -68,17 +68,17 @@ class SaTokenTests extends ThinkTestCase
     }
 
     /**
-     * 剩余时间高于 renew_buffer 时不应续期，避免每次请求写缓存
+     * 剩余时间高于 renew_before 时不应续期，避免每次请求写缓存
      */
-    public function test_renew_above_buffer_does_not_rewrite_cache()
+    public function test_renew_above_before_does_not_rewrite_cache()
     {
-        set_satoken_test_config(['timeout' => 10, 'auto_renew' => true, 'renew_buffer' => 3]);
+        set_satoken_test_config(['timeout' => 10, 'auto_renew' => true, 'renew_before' => 3]);
 
         $token = SaToken::login(self::TEST_USER_ID);
 
         $expireBefore = SaToken::getTokenExpireTime($token);
 
-        // 等待 1 秒（剩余 ~9s，仍然高于 buffer 3s）
+        // 等待 1 秒（剩余 ~9s，仍然高于 before 3s）
         sleep(1);
 
         $this->assertTrue(SaToken::isLogin($token));
@@ -90,15 +90,15 @@ class SaTokenTests extends ThinkTestCase
     }
 
     /**
-     * 剩余时间低于 renew_buffer 时才真正续期
+     * 剩余时间低于 renew_before 时才真正续期
      */
-    public function test_renew_when_remaining_below_buffer_resets_ttl()
+    public function test_renew_when_remaining_below_before_resets_ttl()
     {
-        set_satoken_test_config(['timeout' => 3, 'auto_renew' => true, 'renew_buffer' => 2]);
+        set_satoken_test_config(['timeout' => 3, 'auto_renew' => true, 'renew_before' => 2]);
 
         $token = SaToken::login(self::TEST_USER_ID);
 
-        // 等待 2 秒，剩余 ~1s < buffer 2s，应该触发续期
+        // 等待 2 秒，剩余 ~1s < before 2s，应该触发续期
         sleep(2);
 
         $expireBefore = SaToken::getTokenExpireTime($token);
@@ -270,7 +270,7 @@ class SaTokenTests extends ThinkTestCase
      */
     public function test_auto_renew_keeps_extra()
     {
-        set_satoken_test_config(['auto_renew' => true, 'timeout' => 60, 'renew_buffer' => 3600]);
+        set_satoken_test_config(['auto_renew' => true, 'timeout' => 60, 'renew_before' => 3600]);
         $extra = ['scopes' => ['read', 'write']];
         $token = SaToken::login(self::TEST_USER_ID, $extra);
 
@@ -575,16 +575,16 @@ class SaTokenTests extends ThinkTestCase
     }
 
     /**
-     * checkLogin：通过校验后应触发滑动续期（剩余时间低于 buffer 时刷新 TTL）
+     * checkLogin：通过校验后应触发滑动续期（剩余时间低于 before 时刷新 TTL）
      */
-    public function test_check_login_triggers_renew_when_below_buffer()
+    public function test_check_login_triggers_renew_when_below_before()
     {
-        set_satoken_test_config(['timeout' => 3, 'auto_renew' => true, 'renew_buffer' => 3]);
+        set_satoken_test_config(['timeout' => 3, 'auto_renew' => true, 'renew_before' => 3]);
 
         $token        = SaToken::login(self::TEST_USER_ID);
         $expireBefore = SaToken::getTokenExpireTime($token);
 
-        sleep(2); // 剩余时间约 1s，低于 buffer 3s
+        sleep(2); // 剩余时间约 1s，低于 before 3s
 
         SaToken::checkLogin($token);
 
